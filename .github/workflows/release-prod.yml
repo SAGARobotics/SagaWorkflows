@@ -59,8 +59,9 @@ jobs:
 
       - name: Build .deb package
         id: build
-        uses: ./.github/SagaActions/build-debian/melodic
+        uses: ./.github/SagaActions/build-debian
         with:
+          ros-distribution: ${{ matrix.ros-distro }}
           package-to-build: ${{ matrix.packages }}
           saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
 
