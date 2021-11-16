@@ -59,9 +59,9 @@ jobs:
 
       - name: Build .deb package
         id: build
-        uses: ./.github/SagaActions/build-debian
+        uses: ${{ format('./.github/SagaActions/build-debian/{0}', matrix.ros-distro }}
         with:
-          ros-distribution: ${{ matrix.ros-distro }}
+          # ros-distribution: ${{ matrix.ros-distro }}
           package-to-build: ${{ matrix.packages }}
           saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
 
