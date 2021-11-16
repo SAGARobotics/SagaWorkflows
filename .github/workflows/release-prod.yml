@@ -40,7 +40,7 @@ jobs:
         run: git submodule update --remote --init --recursive
 
       - name: Release
-        uses: SAGARobotics/SagaActions/releas@main
+        uses: SAGARobotics/SagaActions/release@main
         with:
           ros-distribution: ${{ matrix.ros-distro }}
           release-type: prod
