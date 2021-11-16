@@ -30,17 +30,22 @@ jobs:
         ros-distro: ${{ fromJson(inputs.ros-distributions) }}
 
     steps:
-      - name: Checkout
+      - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v2
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
-          submodules: recursive
-      - name: Submodule update
-        run: git submodule update --remote --init --recursive
+          path: ros_packages
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
 
       - name: Release
-        uses: ./.github/SagaActions/release@main
+        uses: ./.github/SagaActions/release
         with:
           ros-distribution: ${{ matrix.ros-distro }}
           release-type: prod
