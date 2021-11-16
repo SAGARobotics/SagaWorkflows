@@ -27,6 +27,8 @@ jobs:
     strategy:
       matrix:
         ros-distro: ${{ fromJson(inputs.ros-distributions) }}
+    env:
+      DISTRO: ${{ matrix.ros-distro }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -57,7 +59,7 @@ jobs:
 
       - name: Build .deb package
         id: build
-        uses: ./.github/SagaActions/build-debian/${{ matrix.ros-distro }}
+        uses: ./.github/SagaActions/build-debian/${{ env.DISTRO }}
         with:
           package-to-build: ${{ inputs.ros-package-name }}
           saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
@@ -80,7 +82,7 @@ jobs:
       - name: Release
         uses: ./.github/SagaActions/release
         with:
-          ros-distribution: ${{ matrix.ros-distro }}
+          ros-distribution: ${{ env.DISTRO }}
           release-type: prod
           # package-name: ${{ inputs.ros-package-name }}
           # pat-token: ${{ secrets.pat-token }}
