@@ -1,6 +1,5 @@
 on:
   workflow_call:
-
     inputs:
       ros-distributions:
         description: |
@@ -17,8 +16,8 @@ on:
     secrets:
       pat-token:
         required: true
-    #   dev-apt-rw-user:
-    #     required: true
+      dev-apt-rw-user:
+        required: true
 
 jobs:
   build:
@@ -35,7 +34,6 @@ jobs:
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
-          path: ros_packages
 
       - name: Checkout SagaActions
         uses: actions/checkout@v2
@@ -43,19 +41,6 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-
-      - name: Release
-        uses: ./.github/SagaActions/release
-        with:
-          ros-distribution: ${{ matrix.ros-distro }}
-          release-type: prod
-          # package-name: ${{ inputs.ros-package-name }}
-          # pat-token: ${{ secrets.pat-token }}
-          # apt-user: ${{ secrets.dev-apt-rw-user }}
-       
-
-
-#TODO put these in release action
 
       # - name: Prerelease-checks
       #   uses: ./.github/SagaActions/prerelease-check
@@ -70,13 +55,12 @@ jobs:
       #     package-to-test: ${{ inputs.ros-package-name }}
       #     saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
 
-      # - name: Build .deb package
-      #   id: build
-      #   if: ${{ inputs.ros-distribution == 'melodic' }}
-      #   uses: ./.github/SagaActions/build-debian/melodic
-      #   with:
-      #     package-to-build: ${{ inputs.ros-package-name }}
-      #     saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
+      - name: Build .deb package
+        id: build
+        uses: ./.github/SagaActions/build-debian/${{ matrix.ros-distro }}
+        with:
+          package-to-build: ${{ inputs.ros-package-name }}
+          saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
 
       # - name: Update saga-rosdep
       #   uses: ./.github/SagaActions/update-saga-rosdep
@@ -92,3 +76,12 @@ jobs:
       #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
       #     ros-package-name: ${{ inputs.ros-package-name }}
       #     repo-user: ${{ secrets.dev-apt-rw-user }}
+
+      - name: Release
+        uses: ./.github/SagaActions/release
+        with:
+          ros-distribution: ${{ matrix.ros-distro }}
+          release-type: prod
+          # package-name: ${{ inputs.ros-package-name }}
+          # pat-token: ${{ secrets.pat-token }}
+          # apt-user: ${{ secrets.dev-apt-rw-user }}
