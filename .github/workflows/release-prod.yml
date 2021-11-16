@@ -4,7 +4,7 @@ on:
     inputs:
       ros-distributions:
         description: |
-          Stringifies list of ROS distributions the package(s) will be built for
+          Stringified list of ROS distributions the package(s) will be built for
         required: true
         default: melodic
         type: string
@@ -40,7 +40,7 @@ jobs:
         run: git submodule update --remote --init --recursive
 
       - name: Release
-        uses: ./.github/SagaActions/release
+        uses: SAGARobotics/SagaWorkflows/.github/SagaActions/release
         with:
           ros-distribution: ${{ matrix.ros-distro }}
           release-type: prod
