@@ -10,8 +10,9 @@ on:
         type: string
       ros-package-name:
         description: |
-          Name of the ROS package to be released
-        required: true
+          Stringified json list of packages to be released. Default behaviour will
+          release all packages in the repository.
+        required: false
         type: string
     secrets:
       pat-token:
