@@ -2,17 +2,16 @@ on:
   workflow_call:
 
     inputs:
-      ros-distros:
+      ros-distribution:
         description: |
-          Stringified JSON object listing the target ROS distributions
-        default: 'melodic'
-        required: false
+          Name of the ROS distribution the package(s) will be built for
+        required: true
+        default: melodic
+      ros-package-name:
+        description: |
+          Name of the ROS package to be released
+        required: true
         type: string
-      # ros-package-name:
-      #   description: |
-      #     Name of the ROS package to be released
-      #   required: true
-      #   type: string
     secrets:
       pat-token:
         required: true
@@ -23,10 +22,6 @@ jobs:
   build:
     runs-on: [self-hosted, buildfarm]
     name: Build and release Debian package(s)
-
-    strategy:
-      matrix:
-        ros-distros: ${{ fromJson(inputs.ros-distros) }}
 
     steps:
       - name: Checkout
@@ -41,7 +36,8 @@ jobs:
       - name: Release
         uses: ./.github/SagaActions/release
         with:
-          ros-distribution: ${{ matrix.ros-distros }}
+          ros-distribution: ${{ inputs.ros-distro }}
+          release-type: prod
           # package-name: ${{ inputs.ros-package-name }}
           # pat-token: ${{ secrets.pat-token }}
           # apt-user: ${{ secrets.dev-apt-rw-user }}
