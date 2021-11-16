@@ -7,6 +7,7 @@ on:
           Name of the ROS distribution the package(s) will be built for
         required: true
         default: melodic
+        type: string
       ros-package-name:
         description: |
           Name of the ROS package to be released
