@@ -18,12 +18,14 @@ on:
           Path to catch test files from the package's directory
         default: "disabled"
         required: false
+        type: string
       gtest-dir:
         description: |
           Path to directory where google test files exist, from the 
           package's directory
         default: "disabled"
         required: false
+        type: string
 
     secrets:
       pat-token:
