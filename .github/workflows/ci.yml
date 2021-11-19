@@ -16,14 +16,14 @@ on:
       catch-dir:
         description: |
           Path to catch test files from the package's directory
-        default: "disabled"
+        default: disabled
         required: false
         type: string
       gtest-dir:
         description: |
           Path to directory where google test files exist, from the 
           package's directory
-        default: "disabled"
+        default: disabled
         required: false
         type: string
 
@@ -53,7 +53,7 @@ jobs:
       #     path: .github/SagaActions
 
       - name: Catch
-        if: ${{ inputs.catch-dir != "disabled" }}
+        if: ${{ inputs.catch-dir != 'disabled' }}
         run: |
           cd ${{ github.workspace }}/${{ inputs.package }}/${{ inputs.catch-dir }}
           g++ -std=c++11 -Wall -o catchtests *.cpp
@@ -61,7 +61,7 @@ jobs:
         shell: bash
 
       - name: GTest
-        if: ${{ inputs.gtest-dir != "disabled" }}
+        if: ${{ inputs.gtest-dir != 'disabled' }}
         run: |
           echo "::warning::Support for Google's test suite is not yet implemented"
         shell: bash
