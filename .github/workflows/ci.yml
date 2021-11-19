@@ -7,7 +7,7 @@ on:
         required: true
         default: melodic
         type: string
-      ros-packages:
+      packages:
         description: |
           Stringified json list of packages to be released. Default behaviour will
           release all packages in the repository.
