@@ -36,7 +36,7 @@ on:
 jobs:
   unit-tests:
     runs-on: [self-hosted, buildfarm]
-    name: Run unit/library tests
+    name: Unit tests
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -44,13 +44,6 @@ jobs:
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
-
-      # - name: Checkout SagaActions
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: SAGARobotics/SagaActions
-      #     token: ${{ secrets.pat-token }}
-      #     path: .github/SagaActions
 
       - name: Catch
         if: ${{ inputs.catch-dir != 'disabled' }}
@@ -60,8 +53,33 @@ jobs:
           ./catchtests
         shell: bash
 
-      - if: ${{ inputs.gtest-dir != 'disabled' }}
-        name: GTest
+      - name: GTest
+        if: ${{ inputs.gtest-dir != 'disabled' }}
         run: |
           echo "::warning::Support for Google's test suite is not yet implemented"
         shell: bash
+
+  rostests:
+    runs-on: [self-hosted, buildfarm]
+    name: Integration tests
+
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+
+      - name: Rostests
+        uses: ./.github/SagaActions/testing/rostests
+        with:
+          ros-distribution: ${{ matrix.ros-distro }}
+          package-to-test: ${{ inputs.package }}
+          saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
