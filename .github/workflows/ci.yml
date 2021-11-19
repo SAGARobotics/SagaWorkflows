@@ -7,12 +7,24 @@ on:
         required: true
         default: melodic
         type: string
-      ros-packages:
+      package:
         description: |
-          Stringified json list of packages to be released. Default behaviour will
-          release all packages in the repository.
+          The package that the CI pipeline will run for
         required: true
         type: string
+
+      catch-dir:
+        description: |
+          Path to catch test files from the package's directory
+        default: "disabled"
+        required: false
+      gtest-dir:
+        description: |
+          Path to directory where google test files exist, from the 
+          package's directory
+        default: "disabled"
+        required: false
+
     secrets:
       pat-token:
         required: true
@@ -20,34 +32,34 @@ on:
         required: true
 
 jobs:
-  test:
+  unit-tests:
     runs-on: [self-hosted, buildfarm]
-    name: Run tests
-
-    strategy:
-      matrix:
-        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
-        packages: ${{ fromJson(inputs.ros-packages) }}
+    name: Run unit/library tests
 
     steps:
-
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v2
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
 
-      - name: Checkout SagaActions
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
+      # - name: Checkout SagaActions
+      #   uses: actions/checkout@v2
+      #   with:
+      #     repository: SAGARobotics/SagaActions
+      #     token: ${{ secrets.pat-token }}
+      #     path: .github/SagaActions
 
-      - name: Run unittests
-        uses: ./.github/SagaActions/testing/unittests
-        with:
-          # ros-distribution: ${{ matrix.ros-distro }}
-          package-to-test: ${{ matrix.packages }}
-          # saga-deb-read-user: ${{ secrets.dev-apt-rw-user }} 
+      - name: Catch
+        if: ${{ inputs.catch-dir != "disabled" }}
+        run: |
+          cd ${{ github.workspace }}/${{ inputs.package }}/${{ inputs.catch-dir }}
+          g++ -std=c++11 -Wall -o catchtests *.cpp
+          ./catchtests
+        shell: bash
 
+      - name: GTest
+        if: ${{ inputs.gtest-dir != "disabled" }}
+        run: |
+          echo "::warning::Support for Google's test suite is not yet implemented"
+        shell: bash
