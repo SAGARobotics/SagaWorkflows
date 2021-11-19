@@ -22,7 +22,7 @@ on:
 jobs:
   test:
     runs-on: [self-hosted, buildfarm]
-    Name: Run tests
+    name: Run tests
 
     strategy:
       matrix:
