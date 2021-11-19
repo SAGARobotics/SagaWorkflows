@@ -7,7 +7,7 @@ on:
         required: true
         default: melodic
         type: string
-      packages:
+      ros-packages:
         description: |
           Stringified json list of packages to be released. Default behaviour will
           release all packages in the repository.
@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         ros-distro: ${{ fromJson(inputs.ros-distributions) }}
-        packages: ${{ fromJson(inputs.packages) }}
+        packages: ${{ fromJson(inputs.ros-packages) }}
 
     steps:
 
