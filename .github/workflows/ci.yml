@@ -60,8 +60,8 @@ jobs:
           ./catchtests
         shell: bash
 
-      - name: GTest
-        if: ${{ inputs.gtest-dir != 'disabled' }}
+      - if: ${{ inputs.gtest-dir != 'disabled' }}
+        name: GTest
         run: |
           echo "::warning::Support for Google's test suite is not yet implemented"
         shell: bash
