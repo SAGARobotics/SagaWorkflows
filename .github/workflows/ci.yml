@@ -1,0 +1,51 @@
+on:
+  workflow_call:
+    inputs:
+      ros-distributions:
+        description: |
+          Stringified list of ROS distributions the package(s) will be built for
+        required: true
+        default: melodic
+        type: string
+      ros-packages:
+        description: |
+          Stringified json list of packages to be released. Default behaviour will
+          release all packages in the repository.
+        required: true
+        type: string
+    secrets:
+      pat-token:
+        required: true
+      dev-apt-rw-user:
+        required: true
+
+jobs:
+  test:
+    runs-on: [self-hosted, buildfarm]
+    Name: Run tests
+
+    strategy:
+      matrix:
+        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
+        packages: ${{ fromJson(inputs.packages) }}
+
+    steps:
+
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+
+      - name: Run unittests
+        uses: ./.github/SagaActions/testing/unittests
+        with:
+          
+
