@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         ros-distro: ${{ fromJson(inputs.ros-distributions) }}
-        packages: ${{ fromJson(inputs.ros-packages) }}
+        package: ${{ fromJson(inputs.ros-packages) }}
 
     steps:
 
@@ -63,7 +63,7 @@ jobs:
         uses: ./.github/SagaActions/build-debian
         with:
           ros-distribution: ${{ matrix.ros-distro }}
-          package-to-build: ${{ matrix.packages }}
+          package-to-build: ${{ matrix.package }}
           saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
 
       # - name: Update saga-rosdep
@@ -78,7 +78,7 @@ jobs:
         uses: ./.github/SagaActions/push-package
         with:
           debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ inputs.ros-package-name }}
+          ros-package-name: ${{ matrix.package }}
           repo-user: ${{ secrets.dev-apt-rw-user }}
 
       # - name: Release
