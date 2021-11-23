@@ -66,12 +66,12 @@ jobs:
           package-to-build: ${{ matrix.packages }}
           saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
 
-      - name: Update saga-rosdep
-        uses: ./.github/SagaActions/update-saga-rosdep
-        with:
-          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ inputs.ros-package-name }}
-          repo-token: ${{ secrets.pat-token }}
+      # - name: Update saga-rosdep
+      #  uses: ./.github/SagaActions/update-saga-rosdep
+      #  with:
+      #    debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+      #    ros-package-name: ${{ inputs.ros-package-name }}
+      #    repo-token: ${{ secrets.pat-token }}
 
       - name: Release package to repository
         id: apt-release
