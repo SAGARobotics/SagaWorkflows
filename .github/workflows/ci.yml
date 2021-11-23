@@ -26,6 +26,12 @@ on:
         default: disabled
         required: false
         type: string
+      no-rostests:
+        description: | 
+          Control parameter for running rostests. 
+        default: false
+        required: false
+        type: boolean
 
     secrets:
       pat-token:
