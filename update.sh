@@ -17,4 +17,4 @@ then
 else
    echo "No updates were found. Exiting."
    cd ../..
-fif
+fi

@@ -30,7 +30,7 @@ on:
     secrets:
       pat-token:
         required: true
-      dev-apt-rw-user:
+      dev-apt-read-user:
         required: true
 
 jobs:
@@ -62,6 +62,10 @@ jobs:
   rostests:
     runs-on: [self-hosted, buildfarm]
     name: Integration tests
+    
+    strategy:
+      matrix:
+        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -82,4 +86,4 @@ jobs:
         with:
           ros-distribution: ${{ matrix.ros-distro }}
           package-to-test: ${{ inputs.package }}
-          saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
+          saga-deb-read-user: ${{ secrets.dev-apt-read-user }}

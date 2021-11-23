@@ -51,41 +51,41 @@ jobs:
       #     repo-user: ${{ secrets.APT_READ_USER }}
       #     repo-pass: ${{ secrets.APT_READ_PASS }}
 
-      - name: Testing
-        uses: ./.github/SagaActions/run-tests
-        with:
-          ros-distribution: ${{ matrix.ros-distro }}
-          package-to-test: ${{ matrix.packages }}
-          saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}  # TODO: Use 'readonly' user when available
-
-      # - name: Build .deb package
-      #   id: build
-      #   uses: ./.github/SagaActions/build-debian
+      # - name: Testing
+      #   uses: ./.github/SagaActions/run-tests
       #   with:
       #     ros-distribution: ${{ matrix.ros-distro }}
-      #     package-to-build: ${{ matrix.packages }}
-      #     saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
+      #     package-to-test: ${{ matrix.packages }}
+      #     saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}  # TODO: Use 'readonly' user when available
 
-      # - name: Update saga-rosdep
-      #   uses: ./.github/SagaActions/update-saga-rosdep
-      #   with:
-      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-      #     ros-package-name: ${{ inputs.ros-package-name }}
-      #     repo-token: ${{ secrets.pat-token }}
-
-      # - name: Release package to repository
-      #   id: apt-release
-      #   uses: ./.github/SagaActions/push-package
-      #   with:
-      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-      #     ros-package-name: ${{ inputs.ros-package-name }}
-      #     repo-user: ${{ secrets.dev-apt-rw-user }}
-
-      - name: Release
-        uses: ./.github/SagaActions/release
+      - name: Build .deb package
+        id: build
+        uses: ./.github/SagaActions/build-debian
         with:
           ros-distribution: ${{ matrix.ros-distro }}
-          release-type: prod
+          package-to-build: ${{ matrix.packages }}
+          saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
+
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/update-saga-rosdep
+        with:
+          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+          ros-package-name: ${{ inputs.ros-package-name }}
+          repo-token: ${{ secrets.pat-token }}
+
+      - name: Release package to repository
+        id: apt-release
+        uses: ./.github/SagaActions/push-package
+        with:
+          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+          ros-package-name: ${{ inputs.ros-package-name }}
+          repo-user: ${{ secrets.dev-apt-rw-user }}
+
+      # - name: Release
+      #   uses: ./.github/SagaActions/release
+      #   with:
+      #     ros-distribution: ${{ matrix.ros-distro }}
+      #     release-type: prod
           # package-name: ${{ inputs.ros-package-name }}
           # pat-token: ${{ secrets.pat-token }}
           # apt-user: ${{ secrets.dev-apt-rw-user }}
