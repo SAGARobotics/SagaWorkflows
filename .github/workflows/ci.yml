@@ -66,6 +66,7 @@ jobs:
         shell: bash
 
   rostests:
+    if: $${{ !inputs.no-rostests }}
     runs-on: [self-hosted, buildfarm]
     name: Integration tests
     
