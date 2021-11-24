@@ -7,58 +7,60 @@ on:
         required: true
         default: melodic
         type: string
-      ros-packages:
-        description: |
-          Stringified json list of packages to be released. Default behaviour will
-          release all packages in the repository.
+      package:
+        description: The ROS package this workflow will run for
         required: true
         type: string
+
+      catch-dir:
+        description: |
+          Path to catch test files from the package's directory
+        default: disabled
+        required: false
+        type: string
+      gtest-dir:
+        description: |
+          Path to directory where google test files exist, from the 
+          package's directory
+        default: disabled
+        required: false
+        type: string
+      no-rostests:
+        description: | 
+          Control parameter for running rostests. 
+        default: false
+        required: false
+        type: boolean
+
     secrets:
       pat-token:
+        required: true
+      dev-apt-r-user:
         required: true
       dev-apt-rw-user:
         required: true
 
 jobs:
-  test:
-    runs-on: [self-hosted, buildfarm]
-    name: Test package
-
-    strategy:
-      matrix:
-        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
-        package: ${{ fromJson(inputs.ros-packages) }}
-
-    steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
-
-      - name: Checkout SagaActions
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-
-      - name: Rostests
-        uses: ./.github/SagaActions/testing/rostests
-        with:
-          ros-distribution: ${{ matrix.ros-distro }}
-          package-to-test: ${{ matrix.package }}
-          saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
+  testing:
+    uses: SAGARobotics/SagaWorkflows/.github/workflows/ci.yml@main
+    with:
+      ros-distributions: ${{ inputs.ros-distributions }}
+      package: ${{ inputs.package }}
+      catch-dir: ${{ inputs.catch-dir }}
+      gtest-dir: ${{ inputs.gtest-dir }}
+      no-rostests: ${{ inputs.no-rostests }}
+    secrets:
+      pat-token: ${{ secrets.pat-token }}
+      dev-apt-read-user: ${{ secrets.dev-apt-r-user }}
 
   build:
-    needs: test
+    needs: testing
     runs-on: [self-hosted, buildfarm]
     name: Build and release Debian package(s)
 
     strategy:
       matrix:
         ros-distro: ${{ fromJson(inputs.ros-distributions) }}
-        package: ${{ fromJson(inputs.ros-packages) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -77,56 +79,31 @@ jobs:
       # - name: Prerelease-checks
       #   uses: ./.github/SagaActions/prerelease-check
       #   with:
-      #     ros-package-name: ${{ inputs.ros-package-name }}
-      #     repo-user: ${{ secrets.APT_READ_USER }}
-      #     repo-pass: ${{ secrets.APT_READ_PASS }}
-
-      # - name: Testing
-      #   uses: ./.github/SagaActions/run-tests
-      #   with:
-      #     ros-distribution: ${{ matrix.ros-distro }}
-      #     package-to-test: ${{ matrix.packages }}
-      #     saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}  # TODO: Use 'readonly' user when available
-
+      #     ros-package-name: ${{ inputs.package }}
+      #     repo-user: ${{ secrets.dev-apt-r-user }}
       - name: Build .deb package
         id: build
         uses: ./.github/SagaActions/build-debian
         with:
           ros-distribution: ${{ matrix.ros-distro }}
-          package-to-build: ${{ matrix.package }}
-          saga-deb-read-user: ${{ secrets.dev-apt-rw-user }}
+          package-to-build: ${{ inputs.package }}
+          saga-deb-read-user: ${{ secrets.dev-apt-r-user }}
 
-      # - name: Update saga-rosdep
-      #  uses: ./.github/SagaActions/update-saga-rosdep
-      #  with:
-      #    debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-      #    ros-package-name: ${{ inputs.ros-package-name }}
-      #    repo-token: ${{ secrets.pat-token }}
+      # TODO: Create step here that uploads the created .deb file as
+      #       an artifact on GitHub, and the split the update-rosdep
+      #       and release-package-to-repository steps into its own
+      #       job titled 'release'
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/update-saga-rosdep
+        with:
+          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+          ros-package-name: ${{ inputs.package }}
+          repo-token: ${{ secrets.pat-token }}
 
       - name: Release package to repository
         id: apt-release
         uses: ./.github/SagaActions/push-package
         with:
           debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ matrix.package }}
+          ros-package-name: ${{ inputs.package }}
           repo-user: ${{ secrets.dev-apt-rw-user }}
-
-      # - name: Release
-      #   uses: ./.github/SagaActions/release
-      #   with:
-      #     ros-distribution: ${{ matrix.ros-distro }}
-      #     release-type: prod
-          # package-name: ${{ inputs.ros-package-name }}
-          # pat-token: ${{ secrets.pat-token }}
-          # apt-user: ${{ secrets.dev-apt-rw-user }}
-  release:
-    needs: build
-    runs-on: [self-hosted, buildfarm]
-    name: Release packages to repository
-
-    steps:
-      - name: Release
-        run: |
-          echo "Releasing artifact to repository"
-          echo "::warning::Not implemented"
-        shell: bash
