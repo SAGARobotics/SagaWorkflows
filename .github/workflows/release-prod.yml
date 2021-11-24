@@ -93,13 +93,6 @@ jobs:
       #       an artifact on GitHub, and the split the update-rosdep
       #       and release-package-to-repository steps into its own
       #       job titled 'release'
-      - name: Update saga-rosdep
-        uses: ./.github/SagaActions/update-saga-rosdep
-        with:
-          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ inputs.package }}
-          repo-token: ${{ secrets.pat-token }}
-
       - name: Release package to repository
         id: apt-release
         uses: ./.github/SagaActions/push-package
@@ -107,3 +100,10 @@ jobs:
           debian-package-name: ${{ steps.build.outputs.deb_package_name }}
           ros-package-name: ${{ inputs.package }}
           repo-user: ${{ secrets.dev-apt-rw-user }}
+
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/update-saga-rosdep
+        with:
+          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+          ros-package-name: ${{ inputs.package }}
+          repo-token: ${{ secrets.pat-token }}
