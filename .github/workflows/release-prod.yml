@@ -35,9 +35,9 @@ on:
     secrets:
       pat-token:
         required: true
-      dev-apt-r-user:
+      dev-apt-read-user:
         required: true
-      dev-apt-rw-user:
+      dev-apt-read-write-user:
         required: true
 
 jobs:
@@ -94,7 +94,7 @@ jobs:
         with:
           ros-distribution: ${{ matrix.ros-distro }}
           package-to-test: ${{ inputs.package }}
-          saga-deb-read-user: ${{ secrets.dev-apt-r-user }}
+          saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
 
   build:
     needs: [unit-tests, rostests]
@@ -123,14 +123,14 @@ jobs:
       #   uses: ./.github/SagaActions/prerelease-check
       #   with:
       #     ros-package-name: ${{ inputs.package }}
-      #     repo-user: ${{ secrets.dev-apt-r-user }}
+      #     repo-user: ${{ secrets.dev-apt-read-user }}
       - name: Build .deb package
         id: build
         uses: ./.github/SagaActions/build-debian
         with:
           ros-distribution: ${{ matrix.ros-distro }}
           package-to-build: ${{ inputs.package }}
-          saga-deb-read-user: ${{ secrets.dev-apt-r-user }}
+          saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
 
       # TODO: Create step here that uploads the created .deb file as
       #       an artifact on GitHub, and the split the update-rosdep
@@ -142,7 +142,7 @@ jobs:
         with:
           debian-package-name: ${{ steps.build.outputs.deb_package_name }}
           ros-package-name: ${{ inputs.package }}
-          repo-user: ${{ secrets.dev-apt-rw-user }}
+          repo-user: ${{ secrets.dev-apt-read-write-user }}
 
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/update-saga-rosdep
