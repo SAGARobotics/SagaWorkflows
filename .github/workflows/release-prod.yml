@@ -20,7 +20,38 @@ on:
         required: true
 
 jobs:
+  test:
+    runs-on: [self-hosted, buildfarm]
+    name: Test package
+
+    strategy:
+      matrix:
+        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
+        package: ${{ fromJson(inputs.ros-packages) }}
+
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+
+      - name: Rostests
+        uses: ./.github/SagaActions/testing/rostests
+        with:
+          ros-distribution: ${{ matrix.ros-distro }}
+          package-to-test: ${{ matrix.package }}
+          saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
+
   build:
+    needs: test
     runs-on: [self-hosted, buildfarm]
     name: Build and release Debian package(s)
 
@@ -30,7 +61,6 @@ jobs:
         package: ${{ fromJson(inputs.ros-packages) }}
 
     steps:
-
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v2
         with:
@@ -89,3 +119,14 @@ jobs:
           # package-name: ${{ inputs.ros-package-name }}
           # pat-token: ${{ secrets.pat-token }}
           # apt-user: ${{ secrets.dev-apt-rw-user }}
+  release:
+    needs: build
+    runs-on: [self-hosted, buildfarm]
+    name: Release packages to repository
+
+    steps:
+      - name: Release
+        run: |
+          echo "Releasing artifact to repository"
+          echo "::warning::Not implemented"
+        shell: bash
