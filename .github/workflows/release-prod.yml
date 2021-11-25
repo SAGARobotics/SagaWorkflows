@@ -171,7 +171,7 @@ jobs:
         run: |
           echo "Artifacts:"
           ls ${{ github.workspace }}/artifacts
-          echo "name; $(${{ github.workspace }}/artifacts/${{ inputs.package }}-${{ matrix.ros-distro }}-artifact)"
+          echo "name; $(${{ inputs.package }}-${{ matrix.ros-distro }}-artifact)"
         shell: bash
 
       # - name: Release package to repository
