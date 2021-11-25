@@ -171,21 +171,20 @@ jobs:
         run: |
           echo "Artifacts:"
           ls ${{ github.workspace }}/artifacts
-          ARTIFACT=${{ github.workspace }}/artifacts/${{ inputs.package }}-${{ matrix.ros-distro }}-artifact
-          [ -f "$ARTIFACT" ]
+          echo "name; $(${{ github.workspace }}/artifacts/${{ inputs.package }}-${{ matrix.ros-distro }}-artifact)"
         shell: bash
 
-      - name: Release package to repository
-        id: apt-release
-        uses: ./.github/SagaActions/push-package
-        with:
-          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ inputs.package }}
-          repo-user: ${{ secrets.dev-apt-read-write-user }}
+      # - name: Release package to repository
+      #   id: apt-release
+      #   uses: ./.github/SagaActions/push-package
+      #   with:
+      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+      #     ros-package-name: ${{ inputs.package }}
+      #     repo-user: ${{ secrets.dev-apt-read-write-user }}
 
-      - name: Update saga-rosdep
-        uses: ./.github/SagaActions/update-saga-rosdep
-        with:
-          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ inputs.package }}
-          repo-token: ${{ secrets.pat-token }}
+      # - name: Update saga-rosdep
+      #   uses: ./.github/SagaActions/update-saga-rosdep
+      #   with:
+      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+      #     ros-package-name: ${{ inputs.package }}
+      #     repo-token: ${{ secrets.pat-token }}
