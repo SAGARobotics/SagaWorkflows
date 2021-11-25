@@ -165,26 +165,28 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ inputs.package }}-${{ matrix.ros-distro }}-artifact
-          path: ${{ github.workspace }}/artifacts
+          path: ${{ github.workspace }}/artifacts/${{ matrix.ros-distro }}
 
-      - name: Verify download
+      - name: Find debian filename
+        id: name
         run: |
           echo "Artifacts:"
-          ls ${{ github.workspace }}/artifacts
-          echo "name; $(${{ inputs.package }}-${{ matrix.ros-distro }}-artifact)"
+          DEBFILE=$(ls ${{ steps.download.outputs.download-path }} | grep -e "\.deb$")
+          echo "::set-output name=debfile::$DEBFILE"
         shell: bash
 
-      # - name: Release package to repository
-      #   id: apt-release
-      #   uses: ./.github/SagaActions/push-package
-      #   with:
-      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-      #     ros-package-name: ${{ inputs.package }}
-      #     repo-user: ${{ secrets.dev-apt-read-write-user }}
+      - name: Release package to repository
+        id: apt-release
+        uses: ./.github/SagaActions/push-package
+        with:
+          debian-package-name: ${{ steps.name.outputs.debfile }}
+          package-location: ${{ steps.download.outputs.download-path }}
+          ros-package-name: ${{ inputs.package }}
+          repo-user: ${{ secrets.dev-apt-read-write-user }}
 
-      # - name: Update saga-rosdep
-      #   uses: ./.github/SagaActions/update-saga-rosdep
-      #   with:
-      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-      #     ros-package-name: ${{ inputs.package }}
-      #     repo-token: ${{ secrets.pat-token }}
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/update-saga-rosdep
+        with:
+          debian-package-name: ${{ steps.name.outputs.debfile }}
+          ros-package-name: ${{ inputs.package }}
+          repo-token: ${{ secrets.pat-token }}
