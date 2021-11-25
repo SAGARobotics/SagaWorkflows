@@ -81,7 +81,6 @@ jobs:
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
-
       - name: Checkout SagaActions
         uses: actions/checkout@v2
         with:
@@ -111,7 +110,6 @@ jobs:
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
-
       - name: Checkout SagaActions
         uses: actions/checkout@v2
         with:
@@ -132,21 +130,62 @@ jobs:
           package-to-build: ${{ inputs.package }}
           saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
 
-      # TODO: Create step here that uploads the created .deb file as
-      #       an artifact on GitHub, and the split the update-rosdep
-      #       and release-package-to-repository steps into its own
-      #       job titled 'release'
-      - name: Release package to repository
-        id: apt-release
-        uses: ./.github/SagaActions/push-package
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
         with:
-          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ inputs.package }}
-          repo-user: ${{ secrets.dev-apt-read-write-user }}
+          name: ${{ inputs.package }}-${{ matrix.ros-distro }}-artifact
+          path: ${{ github.workspace }}/${{ inputs.package }}/bin/${{ steps.build.outputs.deb_package_name }}
+          if-no-files-found: error
+          retention-days: 1
 
-      - name: Update saga-rosdep
-        uses: ./.github/SagaActions/update-saga-rosdep
+  release:
+    needs: build
+    runs-on: [self-hosted, buildfarm]
+    name: Upload the built packages to the repository
+
+    strategy:
+      matrix:
+        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
+
+    steps:
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v2
         with:
-          debian-package-name: ${{ steps.build.outputs.deb_package_name }}
-          ros-package-name: ${{ inputs.package }}
-          repo-token: ${{ secrets.pat-token }}
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+      - name: Checkout SagaActions
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+
+      - name: Download artifact
+        id: download
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ inputs.package }}-${{ matrix.ros-distro }}-artifact
+          path: ${{ github.workspace }}/artifacts
+
+      - name: Verify download
+        run: |
+          echo "Artifacts:"
+          ls ${{ github.workspace }}/artifacts
+          echo: "Files:"
+          ls ${{ github.workspace }}/artifacts/${{ inputs.package }}-${{ matrix.ros-distro }}-artifact
+        shell: bash
+
+      # - name: Release package to repository
+      #   id: apt-release
+      #   uses: ./.github/SagaActions/push-package
+      #   with:
+      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+      #     ros-package-name: ${{ inputs.package }}
+      #     repo-user: ${{ secrets.dev-apt-read-write-user }}
+
+      # - name: Update saga-rosdep
+      #   uses: ./.github/SagaActions/update-saga-rosdep
+      #   with:
+      #     debian-package-name: ${{ steps.build.outputs.deb_package_name }}
+      #     ros-package-name: ${{ inputs.package }}
+      #     repo-token: ${{ secrets.pat-token }}
