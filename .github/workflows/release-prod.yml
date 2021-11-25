@@ -98,7 +98,7 @@ jobs:
   build:
     needs: [unit-tests, rostests]
     runs-on: [self-hosted, buildfarm]
-    name: Build and release Debian package(s)
+    name: Build Debian package(s)
 
     strategy:
       matrix:
@@ -141,7 +141,7 @@ jobs:
   release:
     needs: build
     runs-on: [self-hosted, buildfarm]
-    name: Upload the built packages to the repository
+    name: Upload
 
     strategy:
       matrix:
