@@ -7,9 +7,14 @@ on:
         required: true
         default: melodic
         type: string
-      package:
-        description: The ROS package this workflow will run for
-        required: true
+      packages:
+        description: |
+          Stringified list of ROS packages that this workflow will run for. Default
+          behavior will release all packages in the repo, or, if the repository contains
+          a single package, release the one package that the repository contains.
+          If a list is provided, only the packages defined in the list will be built.
+        required: false
+        default: 'release-all'
         type: string
 
       catch-dir:
@@ -31,6 +36,13 @@ on:
         default: false
         required: false
         type: boolean
+      release-type:
+        description: |
+          Variable controlling where the produced package is released. Valid 
+          values are "dev" (default) and "prod"
+        default: 'dev'
+        required: false
+        type: string
 
     secrets:
       pat-token:
@@ -45,6 +57,10 @@ jobs:
     runs-on: [self-hosted, buildfarm]
     name: Unit tests
 
+    strategy:
+      matrix:
+        package: ${{ inputs.packages }}
+
     steps:
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v2
@@ -55,6 +71,9 @@ jobs:
       - name: Catch
         if: ${{ inputs.catch-dir != 'disabled' }}
         run: |
+          if [[ ${{ inputs.packages }} =~ "release-all" ]];
+          then
+              
           cd ${{ github.workspace }}/${{ inputs.package }}/${{ inputs.catch-dir }}
           g++ -std=c++11 -Wall -o catchtests *.cpp
           ./catchtests
@@ -171,6 +190,7 @@ jobs:
         id: name
         run: |
           echo "Artifacts:"
+          ls ${{ steps.download.outputs.download-path
           DEBFILE=$(ls ${{ steps.download.outputs.download-path }} | grep -e "\.deb$")
           echo "::set-output name=debfile::$DEBFILE"
         shell: bash
@@ -183,6 +203,7 @@ jobs:
           package-location: ${{ steps.download.outputs.download-path }}
           ros-package-name: ${{ inputs.package }}
           repo-user: ${{ secrets.dev-apt-read-write-user }}
+          release-type: ${{ inputs.release-type }}
 
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/update-saga-rosdep
