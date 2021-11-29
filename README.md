@@ -12,18 +12,14 @@ A ROS package is assumed to have the following format:
 my-ros-package/
 |
 +---- package.xml
-+---- CMakeLists.xml
-|
-+---- src/
+      CMakeLists.xml
+      src/
       |
       +---- main/
       |     |
       |     +---- file-1.cpp
-      |     +---- file-2.cpp
-      |
-      +---- test/
-            |
-            +---- ros_integration.test
+      |           file-2.cpp
+      +---- test/...
 ```
 The following repo-structures have reusable workflows defined in this
 repository:
@@ -35,11 +31,9 @@ repository:
   ```
   my-repository
   |
-  +---- package1/
-  |
-  +---- package2/
-  |
-  +---- README.md
+  +---- package1/...
+        package2/...
+        README.md
   ```
 - Release specific package:  
   A single package is built and released. This is used if the packages are
