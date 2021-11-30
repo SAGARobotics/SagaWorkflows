@@ -70,7 +70,7 @@ jobs:
           path: .github/SagaActions
 
       - name: Create matrix
-        uses: ./.github/SAGARobotics/SagaActions/prepare-repo
+        uses: ./.github/SagaActions/prepare-repo
         with: 
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
@@ -95,7 +95,7 @@ jobs:
           path: .github/SagaActions
 
       - name: Prepare repository
-        uses: ./.github/SAGARobotics/SagaActions/prepare-repo
+        uses: ./.github/SagaActions/prepare-repo
         with: 
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
