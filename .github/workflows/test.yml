@@ -59,58 +59,62 @@ jobs:
     outputs:
       matrix: ${{ steps.create-matrix.outputs.matrix }}
     steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
+      # - name: Checkout ${{ github.event.repository.name }}
+      #   uses: actions/checkout@v2
+      #   with:
+      #     repository: SAGARobotics/${{ github.event.repository.name }}
+      #     token: ${{ secrets.pat-token }}
       - name: Checkout SagaActions
         uses: actions/checkout@v2
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-
-      - name: Create matrix
-        id: create-matrix
-        uses: ./.github/SagaActions/prepare-repo
-        with: 
+      - name: Conform
+        uses: ./.github/SagaActions/checkout-conform
+        with:
           pat-token: ${{ secrets.pat-token }}
-          ros-distributions: ${{ inputs.ros-distributions }}
-          packages: ${{ inputs.packages }}
+
+      # - name: Create matrix
+      #   id: create-matrix
+      #   uses: ./.github/SagaActions/prepare-repo
+      #   with: 
+      #     pat-token: ${{ secrets.pat-token }}
+      #     ros-distributions: ${{ inputs.ros-distributions }}
+      #     packages: ${{ inputs.packages }}
     
-  test-output:
-    needs: prepare-repo
-    runs-on: [self-hosted, buildfarm]
-    strategy:
-      #matrix: ${{ fromJson("{ros-distro: [melodic, noetic], package: [goodbye_ros, hello_ros, rosmath, ] }") }}
-      matrix: ${{fromJson(needs.prepare-repo.outputs.matrix)}}
+  # test-output:
+  #   needs: prepare-repo
+  #   runs-on: [self-hosted, buildfarm]
+  #   strategy:
+  #     #matrix: ${{ fromJson("{ros-distro: [melodic, noetic], package: [goodbye_ros, hello_ros, rosmath, ] }") }}
+  #     matrix: ${{fromJson(needs.prepare-repo.outputs.matrix)}}
 
-    steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
-      - name: Checkout SagaActions
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
+  #   steps:
+  #     - name: Checkout ${{ github.event.repository.name }}
+  #       uses: actions/checkout@v2
+  #       with:
+  #         repository: SAGARobotics/${{ github.event.repository.name }}
+  #         token: ${{ secrets.pat-token }}
+  #     - name: Checkout SagaActions
+  #       uses: actions/checkout@v2
+  #       with:
+  #         repository: SAGARobotics/SagaActions
+  #         token: ${{ secrets.pat-token }}
+  #         path: .github/SagaActions
 
-      - name: Prepare repository
-        id: prep
-        uses: ./.github/SagaActions/prepare-repo
-        with: 
-          pat-token: ${{ secrets.pat-token }}
-          ros-distributions: ${{ inputs.ros-distributions }}
-          pacakges: ${{ inputs.packages }}
-      - name: Test JOB
-        run: echo ${{ needs.prepare-repo.outputs.matrix }}
-      - name: Test STEP
-        run: echo ${{ steps.prep.outputs.matrix }}
+  #     - name: Prepare repository
+  #       id: prep
+  #       uses: ./.github/SagaActions/prepare-repo
+  #       with: 
+  #         pat-token: ${{ secrets.pat-token }}
+  #         ros-distributions: ${{ inputs.ros-distributions }}
+  #         pacakges: ${{ inputs.packages }}
+  #     - name: Test JOB
+  #       run: echo ${{ needs.prepare-repo.outputs.matrix }}
+  #     - name: Test STEP
+  #       run: echo ${{ steps.prep.outputs.matrix }}
 
-      - run: echo ${{ matrix.ros-distro }}
-      - run: echo ${{ matrix.package }}
+  #     - run: echo ${{ matrix.ros-distro }}
+  #     - run: echo ${{ matrix.package }}
 
