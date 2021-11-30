@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: SAGARobotics/SagaActions
-          token: ${{ inputs.pat-token }}
+          token: ${{ secrets.pat-token }}
           path: .github/SagaActions
       - name: Create matrix
         uses: ./.github/SAGARobotics/SagaActions/prepare-repo
@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: SAGARobotics/SagaActions
-          token: ${{ inputs.pat-token }}
+          token: ${{ secrets.pat-token }}
           path: .github/SagaActions
       - name: Prepare repository
         uses: ./.github/SAGARobotics/SagaActions/prepare-repo
