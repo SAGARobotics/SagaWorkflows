@@ -233,7 +233,7 @@ jobs:
         id: name
         run: |
           echo "Artifacts:"
-          ls ${{ steps.download.outputs.download-path
+          ls ${{ steps.download.outputs.download-path }}
           DEBFILE=$(ls ${{ steps.download.outputs.download-path }} | grep -e "\.deb$")
           echo "::set-output name=debfile::$DEBFILE"
         shell: bash
