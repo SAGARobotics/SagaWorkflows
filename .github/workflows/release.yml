@@ -53,13 +53,38 @@ on:
         required: true
 
 jobs:
+  create-matrix:
+    runs-on: [self-hosted, buildfarm]
+    name: Prepare Job matrix
+    outputs:
+      matrix: ${{ steps.create-matrix.outputs.matrix }}
+    steps:
+      - name:  Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+      - name: Checkout SagaActions
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+      - name: Create matrix
+        id: create-matrix
+        uses: ./.github/SagaActions/prepare-repo
+        with: 
+          pat-token: ${{ secrets.pat-token }}
+          ros-distributions: ${{ inputs.ros-distributions }}
+          pacakges: ${{ inputs.packages }}
+
   unit-tests:
     runs-on: [self-hosted, buildfarm]
     name: Unit tests
 
     strategy:
       matrix:
-        package: ${{ inputs.packages }}
+        package: ${{ fromJson(inputs.packages) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -89,10 +114,10 @@ jobs:
     if: $${{ !inputs.no-rostests }}
     runs-on: [self-hosted, buildfarm]
     name: Integration tests
-    
+    needs: create-matrix
+
     strategy:
-      matrix:
-        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
+      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -106,12 +131,16 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
+      - name: Conform repository
+        uses: ./.github/SagaActions/prepare-repo
+        with: 
+          ros-distribution: ${{ matrix.ros-distro }}
 
       - name: Rostests
         uses: ./.github/SagaActions/testing/rostests
         with:
           ros-distribution: ${{ matrix.ros-distro }}
-          package-to-test: ${{ inputs.package }}
+          package-to-test: ${{ matrix.package }}
           saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
 
   build:

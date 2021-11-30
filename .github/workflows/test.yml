@@ -59,11 +59,11 @@ jobs:
     # outputs:
     #   matrix: ${{ steps.create-matrix.outputs.matrix }}
     steps:
-      # - name: Checkout ${{ github.event.repository.name }}
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: SAGARobotics/${{ github.event.repository.name }}
-      #     token: ${{ secrets.pat-token }}
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
       - name: Checkout SagaActions
         uses: actions/checkout@v2
         with:
