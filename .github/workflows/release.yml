@@ -75,7 +75,7 @@ jobs:
         with: 
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
-          pacakges: ${{ inputs.packages }}
+          packages: ${{ inputs.packages }}
 
   unit-tests:
     needs: create-matrix
