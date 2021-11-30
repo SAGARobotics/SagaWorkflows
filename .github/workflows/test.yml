@@ -56,8 +56,8 @@ jobs:
   prepare-repo:
     runs-on: [self-hosted, buildfarm]
     name: Prepare Repository
-    outputs:
-      matrix: ${{ steps.create-matrix.outputs.matrix }}
+    # outputs:
+    #   matrix: ${{ steps.create-matrix.outputs.matrix }}
     steps:
       # - name: Checkout ${{ github.event.repository.name }}
       #   uses: actions/checkout@v2
