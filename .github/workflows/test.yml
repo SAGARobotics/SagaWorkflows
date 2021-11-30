@@ -72,8 +72,8 @@ jobs:
           path: .github/SagaActions
       - name: LSACTIONS
         run: ls .github/SagaActions
-      - name: LSWORKFLOWS
-        run: ls .github/SagaWorkflows
+      - name: LSWS
+        run: ls
       - name: Conform
         uses: ./.github/SagaActions/checkout-conform
         with:
