@@ -1,0 +1,75 @@
+on:
+  workflow_call:
+    inputs:
+      ros-distributions:
+        description: |
+          Stringified list of ROS distributions the package(s) will be built for
+        required: true
+        default: melodic
+        type: string
+      packages:
+        description: |
+          Stringified list of ROS packages that this workflow will run for. Default
+          behavior will release all packages in the repo, or, if the repository contains
+          a single package, release the one package that the repository contains.
+          If a list is provided, only the packages defined in the list will be built.
+        required: false
+        default: 'release-all'
+        type: string
+
+      catch-dir:
+        description: |
+          Path to catch test files from the package's directory
+        default: disabled
+        required: false
+        type: string
+      gtest-dir:
+        description: |
+          Path to directory where google test files exist, from the 
+          package's directory
+        default: disabled
+        required: false
+        type: string
+      no-rostests:
+        description: | 
+          Control parameter for running rostests. 
+        default: false
+        required: false
+        type: boolean
+      release-type:
+        description: |
+          Variable controlling where the produced package is released. Valid 
+          values are "dev" (default) and "prod"
+        default: 'dev'
+        required: false
+        type: string
+
+    secrets:
+      pat-token:
+        required: true
+      dev-apt-read-user:
+        required: true
+      dev-apt-read-write-user:
+        required: true
+
+jobs:
+  prepare-repo:
+    runs-on: [self-hosted, buildfarm]
+    name: Prepare Repository
+    steps:
+      - name: Create matrix
+        uses: SAGARobotics/SagaActions/prepare-repo
+        with: 
+          pat-token: ${{ secrets.pat-token }}
+          ros-distributions: ${{ inputs.ros-distributions }}
+    
+    test-output:
+      needs: prepare-repo
+      runs-on: [self-hosted, buildfarm]
+      strategy:
+        matrix: ${{ fromJson(needs.prepare-repo.outputs.matrix) }}
+
+      steps:
+        - run: echo ${{ matrix.ros-distro }}
+        - run: echo ${{ matrix.package }}
+
