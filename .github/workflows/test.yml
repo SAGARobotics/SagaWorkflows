@@ -70,8 +70,10 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-      - name: Before
-        run: ls
+      - name: LSACTIONS
+        run: ls .github/SagaActions
+      - name: LSWORKFLOWS
+        run: ls .github/SagaWorkflows
       - name: Conform
         uses: ./.github/SagaActions/checkout-conform
         with:
