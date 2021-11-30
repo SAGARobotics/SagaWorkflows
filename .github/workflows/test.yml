@@ -81,8 +81,8 @@ jobs:
   test-output:
     needs: prepare-repo
     runs-on: [self-hosted, buildfarm]
-    # strategy:
-    #   matrix: ${{ fromJson(needs.prepare-repo.outputs.matrix) }}
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-repo.outputs.matrix) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -107,6 +107,7 @@ jobs:
         run: echo ${{ needs.prepare-repo.outputs.matrix }}
       - name: Test STEP
         run: echo ${{ steps.prep.outputs.matrix }}
-      # - run: echo ${{ matrix.ros-distro }}
-      # - run: echo ${{ matrix.package }}
+        
+      - run: echo ${{ matrix.ros-distro }}
+      - run: echo ${{ matrix.package }}
 
