@@ -63,13 +63,13 @@ jobs:
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
     
-    test-output:
-      needs: prepare-repo
-      runs-on: [self-hosted, buildfarm]
-      strategy:
-        matrix: ${{ fromJson(needs.prepare-repo.outputs.matrix) }}
+  test-output:
+    needs: prepare-repo
+    runs-on: [self-hosted, buildfarm]
+    strategy:
+      matrix: ${{ fromJson(needs.prepare-repo.outputs.matrix) }}
 
-      steps:
-        - run: echo ${{ matrix.ros-distro }}
-        - run: echo ${{ matrix.package }}
+    steps:
+      - run: echo ${{ matrix.ros-distro }}
+      - run: echo ${{ matrix.package }}
 
