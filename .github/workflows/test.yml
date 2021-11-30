@@ -82,7 +82,8 @@ jobs:
     needs: prepare-repo
     runs-on: [self-hosted, buildfarm]
     strategy:
-      matrix: ${{ fromJson(needs.prepare-repo.outputs.matrix) }}
+      matrix: ${{ fromJson("{ros-distro: [melodic, noetic], package: [goodbye_ros, hello_ros, rosmath, ] }") }}
+      #matrix: ${{ fromJson(needs.prepare-repo.outputs.matrix) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -107,7 +108,7 @@ jobs:
         run: echo ${{ needs.prepare-repo.outputs.matrix }}
       - name: Test STEP
         run: echo ${{ steps.prep.outputs.matrix }}
-        
+
       - run: echo ${{ matrix.ros-distro }}
       - run: echo ${{ matrix.package }}
 
