@@ -58,7 +58,7 @@ jobs:
     name: Prepare Repository
     steps:
       - name: Create matrix
-        uses: SAGARobotics/SagaActions/prepare-repo
+        uses: ./.github/SAGARobotics/SagaActions/prepare-repo
         with: 
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
