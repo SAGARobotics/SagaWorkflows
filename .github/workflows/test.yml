@@ -104,6 +104,7 @@ jobs:
         with: 
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
+          pacakges: ${{ inputs.packages }}
       - name: Test JOB
         run: echo ${{ needs.prepare-repo.outputs.matrix }}
       - name: Test STEP
