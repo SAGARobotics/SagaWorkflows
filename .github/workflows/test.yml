@@ -70,10 +70,14 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
+      - name: Before
+        run: ls
       - name: Conform
         uses: ./.github/SagaActions/checkout-conform
         with:
           pat-token: ${{ secrets.pat-token }}
+      - name: Current
+        run: ls
 
       # - name: Create matrix
       #   id: create-matrix
