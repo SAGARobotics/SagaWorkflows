@@ -95,12 +95,15 @@ jobs:
           path: .github/SagaActions
 
       - name: Prepare repository
+        id: prep
         uses: ./.github/SagaActions/prepare-repo
         with: 
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
-      - name: Test
+      - name: Test JOB
         run: echo ${{ needs.prepare-repo.outputs.matrix }}
+      - name: Test STEP
+        run: echo ${{ steps.prep.outputs.matrix }}
       # - run: echo ${{ matrix.ros-distro }}
       # - run: echo ${{ matrix.package }}
 
