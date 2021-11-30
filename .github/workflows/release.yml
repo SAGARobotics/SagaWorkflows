@@ -10,8 +10,7 @@ on:
       packages:
         description: |
           Stringified list of ROS packages that this workflow will run for. Default
-          behavior will release all packages in the repo, or, if the repository contains
-          a single package, release the one package that the repository contains.
+          behavior will release all packages in the repo.
           If a list is provided, only the packages defined in the list will be built.
         required: false
         default: 'release-all'
@@ -72,19 +71,19 @@ jobs:
           path: .github/SagaActions
       - name: Create matrix
         id: create-matrix
-        uses: ./.github/SagaActions/prepare-repo
+        uses: ./.github/SagaActions/create-matrix
         with: 
           pat-token: ${{ secrets.pat-token }}
           ros-distributions: ${{ inputs.ros-distributions }}
           pacakges: ${{ inputs.packages }}
 
   unit-tests:
+    needs: create-matrix
     runs-on: [self-hosted, buildfarm]
     name: Unit tests
 
     strategy:
-      matrix:
-        package: ${{ fromJson(inputs.packages) }}
+      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -92,14 +91,19 @@ jobs:
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
+      - name: Conform
+        run: |
+          if [[ -f package.xml ]];
+          then
+            mkdir ${{ github.event.repository.name }}
+            mv `\ls -1 | grep -v ${{ github.event.repository.name }}` ${{ github.event.repository.name }}
+          fi
+        shell: bash
 
       - name: Catch
         if: ${{ inputs.catch-dir != 'disabled' }}
         run: |
-          if [[ ${{ inputs.packages }} =~ "release-all" ]];
-          then
-              
-          cd ${{ github.workspace }}/${{ inputs.package }}/${{ inputs.catch-dir }}
+          cd ${{ github.workspace }}/${{ matrix.package }}/${{ inputs.catch-dir }}
           g++ -std=c++11 -Wall -o catchtests *.cpp
           ./catchtests
         shell: bash
@@ -112,9 +116,9 @@ jobs:
 
   rostests:
     if: $${{ !inputs.no-rostests }}
+    needs: create-matrix
     runs-on: [self-hosted, buildfarm]
     name: Integration tests
-    needs: create-matrix
 
     strategy:
       matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
@@ -131,10 +135,14 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-      - name: Conform repository
-        uses: ./.github/SagaActions/prepare-repo
-        with: 
-          ros-distribution: ${{ matrix.ros-distro }}
+      - name: Conform
+        run: |
+          if [[ -f package.xml ]];
+          then
+            mkdir ${{ github.event.repository.name }}
+            mv `\ls -1 | grep -v ${{ github.event.repository.name }}` ${{ github.event.repository.name }}
+          fi
+        shell: bash
 
       - name: Rostests
         uses: ./.github/SagaActions/testing/rostests
@@ -144,13 +152,12 @@ jobs:
           saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
 
   build:
-    needs: [unit-tests, rostests]
+    needs: [unit-tests, rostests, create-matrix]
     runs-on: [self-hosted, buildfarm]
     name: Build Debian package
 
     strategy:
-      matrix:
-        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
+      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -164,6 +171,14 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
+      - name: Conform
+        run: |
+          if [[ -f package.xml ]];
+          then
+            mkdir ${{ github.event.repository.name }}
+            mv `\ls -1 | grep -v ${{ github.event.repository.name }}` ${{ github.event.repository.name }}
+          fi
+        shell: bash
 
       # - name: Prerelease-checks
       #   uses: ./.github/SagaActions/prerelease-check
@@ -175,25 +190,24 @@ jobs:
         uses: ./.github/SagaActions/build-debian
         with:
           ros-distribution: ${{ matrix.ros-distro }}
-          package-to-build: ${{ inputs.package }}
+          package-to-build: ${{ matrix.package }}
           saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ inputs.package }}-${{ matrix.ros-distro }}-artifact
-          path: ${{ github.workspace }}/${{ inputs.package }}/bin/${{ steps.build.outputs.deb_package_name }}
+          name: ${{ matrix.package }}-${{ matrix.ros-distro }}-artifact
+          path: ${{ github.workspace }}/${{ matrix.package }}/bin/${{ steps.build.outputs.deb_package_name }}
           if-no-files-found: error
           retention-days: 1
 
   release:
-    needs: build
+    needs: [build, create-matrix]
     runs-on: [self-hosted, buildfarm]
     name: Upload
 
     strategy:
-      matrix:
-        ros-distro: ${{ fromJson(inputs.ros-distributions) }}
+      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout ${{ github.event.repository.name }}
@@ -212,7 +226,7 @@ jobs:
         id: download
         uses: actions/download-artifact@v2
         with:
-          name: ${{ inputs.package }}-${{ matrix.ros-distro }}-artifact
+          name: ${{ matrix.package }}-${{ matrix.ros-distro }}-artifact
           path: ${{ github.workspace }}/artifacts/${{ matrix.ros-distro }}
 
       - name: Find debian filename
@@ -230,7 +244,7 @@ jobs:
         with:
           debian-package-name: ${{ steps.name.outputs.debfile }}
           package-location: ${{ steps.download.outputs.download-path }}
-          ros-package-name: ${{ inputs.package }}
+          ros-package-name: ${{ matrix.package }}
           repo-user: ${{ secrets.dev-apt-read-write-user }}
           release-type: ${{ inputs.release-type }}
 
@@ -238,5 +252,5 @@ jobs:
         uses: ./.github/SagaActions/update-saga-rosdep
         with:
           debian-package-name: ${{ steps.name.outputs.debfile }}
-          ros-package-name: ${{ inputs.package }}
+          ros-package-name: ${{ matrix.package }}
           repo-token: ${{ secrets.pat-token }}

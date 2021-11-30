@@ -80,6 +80,9 @@ jobs:
           pat-token: ${{ secrets.pat-token }}
       - name: Current
         run: ls
+  inspect-repo:
+    runs-on: [self-hosted, buildfarm]
+    
 
       # - name: Create matrix
       #   id: create-matrix
