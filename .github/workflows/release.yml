@@ -150,6 +150,7 @@ jobs:
           ros-distribution: ${{ matrix.ros-distro }}
           package-to-test: ${{ matrix.package }}
           saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
+          depend-repo: ${{ inputs.release-type }}
 
   build:
     needs: [unit-tests, rostests, create-matrix]
@@ -192,6 +193,7 @@ jobs:
           ros-distribution: ${{ matrix.ros-distro }}
           package-to-build: ${{ matrix.package }}
           saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
+          release-type: ${{ inputs.release-type }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
@@ -254,3 +256,4 @@ jobs:
           debian-package-name: ${{ steps.name.outputs.debfile }}
           ros-package-name: ${{ matrix.package }}
           repo-token: ${{ secrets.pat-token }}
+          release-type: ${{ inputs.release-type }}
