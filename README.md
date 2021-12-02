@@ -21,24 +21,13 @@ my-ros-package/
       |           file-2.cpp
       +---- test/...
 ```
-The following repo-structures have reusable workflows defined in this
-repository:
 
-- Release all:  
-  All packagages contained in the repository are released at the same time
-  because of strong connections between them.  
-  Repo structure:
-  ```
-  my-repository
-  |
-  +---- package1/...
-        package2/...
-        README.md
-  ```
-- Release specific package:  
-  A single package is built and released. This is used if the packages are
-  contained in a monorepo-structure, but some packages are ready to be 
-  released before others are.
-- Release single:  
-  A workflow that supports releasing repositories that contain a single 
-  package have also been created.
+## Defined Workflows
+To use any of the pre-defined workflows please refer to the corresponding
+heading:
+
+### Release
+This workflow is intended to release a complete repo, or ROS pacakges contained
+in it. If you have a repository that contains multiple packages, the `packages` 
+variable can be used to specify which packages to release, by supplying a 
+stringified json-list 

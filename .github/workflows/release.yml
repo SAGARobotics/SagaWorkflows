@@ -137,8 +137,10 @@ jobs:
           path: .github/SagaActions
       - name: Conform
         run: |
+          ls ${{ github.workspace }}
           if [[ -f package.xml ]];
           then
+            echo "Was single package -- moving..."
             mkdir ${{ github.event.repository.name }}
             mv `\ls -1 | grep -v ${{ github.event.repository.name }}` ${{ github.event.repository.name }}
           fi
