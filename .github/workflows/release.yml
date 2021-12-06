@@ -42,6 +42,13 @@ on:
         default: 'dev'
         required: false
         type: string
+      runs-on:
+        description: |
+          Where this workflow should run. Self-hosted buildfarm (default) is 
+          only available to private repositories.
+        default: '[self-hosted, buildfarm]'
+        required: false
+        type: string
 
     secrets:
       pat-token:
@@ -53,7 +60,7 @@ on:
 
 jobs:
   create-matrix:
-    runs-on: [self-hosted, buildfarm]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Prepare Job matrix
     outputs:
       matrix: ${{ steps.create-matrix.outputs.matrix }}
@@ -79,7 +86,7 @@ jobs:
 
   unit-tests:
     needs: create-matrix
-    runs-on: [self-hosted, buildfarm]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Unit tests
 
     strategy:
@@ -117,7 +124,7 @@ jobs:
   rostests:
     if: $${{ !inputs.no-rostests }}
     needs: create-matrix
-    runs-on: [self-hosted, buildfarm]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Integration tests
 
     strategy:
@@ -156,7 +163,7 @@ jobs:
 
   build:
     needs: [unit-tests, rostests, create-matrix]
-    runs-on: [self-hosted, buildfarm]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Build Debian package
 
     strategy:
@@ -207,7 +214,7 @@ jobs:
 
   release:
     needs: [build, create-matrix]
-    runs-on: [self-hosted, buildfarm]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Upload
 
     strategy:
