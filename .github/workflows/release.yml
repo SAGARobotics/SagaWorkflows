@@ -46,7 +46,7 @@ on:
         description: |
           Where this workflow should run. Self-hosted buildfarm (default) is 
           only available to private repositories.
-        default: '[self-hosted, buildfarm]'
+        default: '["self-hosted", "buildfarm"]'
         required: false
         type: string
 
