@@ -94,5 +94,6 @@ jobs:
         with:
           ros-distribution: ${{ matrix.ros-distro }}
           package-to-test: ${{ inputs.package }}
+          repo-path: ${{ github.event.repository.name }}
           saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
           pat-token: ${{ secrets.pat-token }}
