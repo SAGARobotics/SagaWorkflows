@@ -23,11 +23,23 @@ on:
         required: false
         type: string
 
-      release-type:
+      saga-repo:
         description: |
           Variable controlling where the produced package is released. Valid 
           values are "dev" (default) and "prod"
         default: 'dev'
+        required: false
+        type: string
+      require-lcas:
+        description: Boolean for requiring LCAS compiled packages
+        default: 'false'
+        required: false
+        type: string
+      require-rasberry:
+        description: |
+          Boolean for requiring RASBerry Core. Will automatically set
+          require-lcas to true.
+        default: 'false'
         required: false
         type: string
 
@@ -38,6 +50,10 @@ on:
         required: true
       dev-apt-read-write-user:
         required: true
+      saga-dockerimage-username:
+        required: false
+      saga-dockerimage-password:
+        required: false
 
 jobs:
   create-matrix:
@@ -90,10 +106,11 @@ jobs:
         uses: ./.github/SagaActions/docker_base
         with: 
           ros-distribution: ${{ matrix.ros-distro }}
-          repo-name: ${{ github.event.repository.name }}
+          repo-name: ${{ inputs.repo-name }}
           packages: ${{ inputs.packages }}
-          require-rasberry: 'true'
-          saga-dockerimage-username: ${{ secrets.SAGA_REPO_READ_USER }}
-          saga-dockerimage-password: ${{ secrets.SAGA_REPO_READ_PASS }}
-          saga-deb-user: ${{ secrets.APT_READ_USER }}
-          pat-token: ${{ secrets.SERVICE_ACCOUNT_PAT_REPO_READ }}
+          saga-repo: ${{ inputs.saga-repo }}
+          require-rasberry: ${{ inputs.require-rasberry }}
+          saga-dockerimage-username: ${{ secrets.saga-dockerimage-username }}
+          saga-dockerimage-password: ${{ secrets.saga-dockerimage-password }}
+          saga-deb-user: ${{ secrets.dev-apt-read-user }}
+          pat-token: ${{ secrets.pat-token }}
