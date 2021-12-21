@@ -16,26 +16,13 @@ on:
         required: false
         default: 'release-all'
         type: string
+      runs-on:
+        description: |
+          List of which runners the workflow should use.
+        default: '["self-hosted", "buildfarm"]'
+        required: false
+        type: string
 
-      catch-dir:
-        description: |
-          Path to catch test files from the package's directory
-        default: disabled
-        required: false
-        type: string
-      gtest-dir:
-        description: |
-          Path to directory where google test files exist, from the 
-          package's directory
-        default: disabled
-        required: false
-        type: string
-      no-rostests:
-        description: | 
-          Control parameter for running rostests. 
-        default: false
-        required: false
-        type: boolean
       release-type:
         description: |
           Variable controlling where the produced package is released. Valid 
@@ -53,11 +40,39 @@ on:
         required: true
 
 jobs:
-  prepare-repo:
-    runs-on: [self-hosted, buildfarm]
-    name: Prepare Repository
-    # outputs:
-    #   matrix: ${{ steps.create-matrix.outputs.matrix }}
+  create-matrix:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Prepare Job matrix
+    outputs:
+      matrix: ${{ steps.create-matrix.outputs.matrix }}
+    steps:
+      - name:  Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+      - name: Checkout SagaActions
+        uses: actions/checkout@v2
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+      - name: Create matrix
+        id: create-matrix
+        uses: ./.github/SagaActions/create-matrix
+        with: 
+          pat-token: ${{ secrets.pat-token }}
+          ros-distributions: ${{ inputs.ros-distributions }}
+          packages: ${{ inputs.packages }}
+
+  testing_actions:
+    needs: create-matrix
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Testing Actions
+
+    strategy:
+      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
+
     steps:
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v2
@@ -70,60 +85,15 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-      - name: LSACTIONS
-        run: ls .github/SagaActions
-      - name: LSWS
-        run: ls
-      - name: Conform
-        uses: ./.github/SagaActions/checkout-conform
-        with:
-          pat-token: ${{ secrets.pat-token }}
-      - name: Current
-        run: ls
-  inspect-repo:
-    runs-on: [self-hosted, buildfarm]
-    
 
-      # - name: Create matrix
-      #   id: create-matrix
-      #   uses: ./.github/SagaActions/prepare-repo
-      #   with: 
-      #     pat-token: ${{ secrets.pat-token }}
-      #     ros-distributions: ${{ inputs.ros-distributions }}
-      #     packages: ${{ inputs.packages }}
-    
-  # test-output:
-  #   needs: prepare-repo
-  #   runs-on: [self-hosted, buildfarm]
-  #   strategy:
-  #     #matrix: ${{ fromJson("{ros-distro: [melodic, noetic], package: [goodbye_ros, hello_ros, rosmath, ] }") }}
-  #     matrix: ${{fromJson(needs.prepare-repo.outputs.matrix)}}
-
-  #   steps:
-  #     - name: Checkout ${{ github.event.repository.name }}
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: SAGARobotics/${{ github.event.repository.name }}
-  #         token: ${{ secrets.pat-token }}
-  #     - name: Checkout SagaActions
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: SAGARobotics/SagaActions
-  #         token: ${{ secrets.pat-token }}
-  #         path: .github/SagaActions
-
-  #     - name: Prepare repository
-  #       id: prep
-  #       uses: ./.github/SagaActions/prepare-repo
-  #       with: 
-  #         pat-token: ${{ secrets.pat-token }}
-  #         ros-distributions: ${{ inputs.ros-distributions }}
-  #         pacakges: ${{ inputs.packages }}
-  #     - name: Test JOB
-  #       run: echo ${{ needs.prepare-repo.outputs.matrix }}
-  #     - name: Test STEP
-  #       run: echo ${{ steps.prep.outputs.matrix }}
-
-  #     - run: echo ${{ matrix.ros-distro }}
-  #     - run: echo ${{ matrix.package }}
-
+      - name: ACTION UNDER TEST
+        uses: ./.github/SagaActions/docker_base
+        with: 
+          ros-distribution: ${{ matrix.ros-distro }}
+          repo-name: ${{ github.event.repository.name }}
+          packages: ${{ inputs.packages }}
+          require-rasberry: 'true'
+          saga-dockerimage-username: ${{ secrets.SAGA_REPO_READ_USER }}
+          saga-dockerimage-password: ${{ secrets.SAGA_REPO_READ_PASS }}
+          saga-deb-user: ${{ secrets.APT_READ_USER }}
+          pat-token: ${{ secrets.SERVICE_ACCOUNT_PAT_REPO_READ }}
