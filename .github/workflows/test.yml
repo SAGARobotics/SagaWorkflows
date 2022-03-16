@@ -1,116 +1,59 @@
 on:
   workflow_call:
+
     inputs:
-      ros-distributions:
-        description: |
-          Stringified list of ROS distributions the package(s) will be built for
-        required: true
-        default: melodic
-        type: string
-      packages:
-        description: |
-          Stringified list of ROS packages that this workflow will run for. Default
-          behavior will release all packages in the repo, or, if the repository contains
-          a single package, release the one package that the repository contains.
-          If a list is provided, only the packages defined in the list will be built.
-        required: false
-        default: 'release-all'
-        type: string
       runs-on:
+        type: string
         description: |
-          List of which runners the workflow should use.
+          Stringified list for choosing github runners. The default is using the 
+          self-hosted buildfarm, but for public repositories the public-hosted 
+          runners must be used (for example ubuntu-latest).
         default: '["self-hosted", "buildfarm"]'
         required: false
+      distributions:
         type: string
-
-      saga-repo:
         description: |
-          Variable controlling where the produced package is released. Valid 
-          values are "dev" (default) and "prod"
-        default: 'dev'
+          Stringified list of the ROS distributions the package(s) will be built 
+          for.
+        default: '["melodic"]'
         required: false
+      packages:
         type: string
-      require-lcas:
-        description: Boolean for requiring LCAS compiled packages
-        default: 'false'
-        required: false
-        type: string
-      require-rasberry:
         description: |
-          Boolean for requiring RASBerry Core. Will automatically set
-          require-lcas to true.
-        default: 'false'
+          Stringified list of the packages that should be built. If not provided 
+          default behavior will be to build all packages.
+        default: '[]'
         required: false
-        type: string
 
     secrets:
       pat-token:
         required: true
-      dev-apt-read-user:
+      repo-user:
         required: true
-      dev-apt-read-write-user:
+      repo-pass:
         required: true
-      saga-dockerimage-username:
-        required: false
-      saga-dockerimage-password:
-        required: false
 
 jobs:
-  create-matrix:
+  build:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Prepare Job matrix
-    outputs:
-      matrix: ${{ steps.create-matrix.outputs.matrix }}
-    steps:
-      - name:  Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
-      - name: Checkout SagaActions
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-      - name: Create matrix
-        id: create-matrix
-        uses: ./.github/SagaActions/create-matrix
-        with: 
-          pat-token: ${{ secrets.pat-token }}
-          ros-distributions: ${{ inputs.ros-distributions }}
-          packages: ${{ inputs.packages }}
-
-  testing_actions:
-    needs: create-matrix
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Testing Actions
-
-    strategy:
-      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
-
+    name: Build
     steps:
       - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
       - name: Checkout SagaActions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-
-      - name: ACTION UNDER TEST
-        uses: ./.github/SagaActions/docker_base
-        with: 
-          ros-distribution: ${{ matrix.ros-distro }}
-          repo-name: ${{ inputs.repo-name }}
+          ref: optim
+      - name: Run Build test
+        uses: ./.github/SagaActions/beta/build
+        with:
+          rosdistro: melodic
           packages: ${{ inputs.packages }}
-          saga-repo: ${{ inputs.saga-repo }}
-          require-rasberry: ${{ inputs.require-rasberry }}
-          saga-dockerimage-username: ${{ secrets.saga-dockerimage-username }}
-          saga-dockerimage-password: ${{ secrets.saga-dockerimage-password }}
-          saga-deb-user: ${{ secrets.dev-apt-read-user }}
-          pat-token: ${{ secrets.pat-token }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
