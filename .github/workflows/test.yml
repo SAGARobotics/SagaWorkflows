@@ -51,9 +51,14 @@ jobs:
           path: .github/SagaActions
           ref: optim
       - name: Run Build test
+        id: build
         uses: ./.github/SagaActions/beta/build
         with:
           rosdistro: melodic
           packages: ${{ inputs.packages }}
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
+      - name: use output
+        run: echo ${{ steps.build.outputs.packages }}
+        shell: bash
+
