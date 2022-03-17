@@ -2,6 +2,7 @@ on:
   workflow_call:
 
     inputs:
+    # GENERAL
       runs-on:
         type: string
         description: |
@@ -10,27 +11,43 @@ on:
           runners must be used (for example ubuntu-latest).
         default: '["self-hosted", "buildfarm"]'
         required: false
-      distributions:
-        type: string
-        description: |
-          Stringified list of the ROS distributions the package(s) will be built 
-          for.
-        default: '["melodic"]'
-        required: false
       packages:
         type: string
         description: |
-          Stringified list of the packages that should be built. If not provided 
-          default behavior will be to build all packages.
-        default: '[]'
+          Stringified list of the packages that shall be used int he workflow. 
+          If not provided, the default behavior is to use all packages. 
+          N.B. If you include the default empty string in the list, all packages 
+          will be included in the workflow. 
+        default: '[""]'
         required: false
+
+    # BUILD
+      distribution:
+        type: string
+        description: |
+          The ROS distribution which the package(s) will be built for.
+        default: 'melodic'
+        required: false
+      release-type:
+        type: string
+        description: |
+          Controls which Saga repository will be used for dependencies.
+        default: 'internal'
+        required: false
+    
+    # TEST (TBD)
 
     secrets:
       pat-token:
+        description: |
+          Personal access token with at least read privileges for all 
+          repositories in the organization.
         required: true
       repo-user:
+        description: Username with read/write privileges to Saga's repository.
         required: true
       repo-pass:
+        description: Password for the provided user.
         required: true
 
 jobs:
@@ -54,8 +71,9 @@ jobs:
         id: build
         uses: ./.github/SagaActions/beta/build
         with:
-          rosdistro: melodic
+          rosdistro: ${{ inputs.distribution }}
           packages: ${{ inputs.packages }}
+          release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
       - name: use output
