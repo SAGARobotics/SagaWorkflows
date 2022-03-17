@@ -77,6 +77,6 @@ jobs:
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
       - name: use output
-        run: echo ${{ steps.build.outputs.packages }}
+        run: echo ${{ steps.build.outputs.package_paths }}
         shell: bash
 
