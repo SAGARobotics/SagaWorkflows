@@ -67,16 +67,24 @@ jobs:
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
           ref: optim
-      - name: Run Build test
-        id: build
-        uses: ./.github/SagaActions/beta/build
-        with:
-          rosdistro: ${{ inputs.distribution }}
-          packages: ${{ inputs.packages }}
-          release-type: ${{ inputs.release-type }}
-          repo-user: ${{ secrets.repo-user }}
-          repo-pass: ${{ secrets.repo-pass }}
-      - name: use output
-        run: echo "${{ steps.build.outputs.package_paths }}"
-        shell: bash
 
+      # - name: Run Build test
+      #   id: build
+      #   uses: ./.github/SagaActions/beta/build
+      #   with:
+      #     rosdistro: ${{ inputs.distribution }}
+      #     packages: ${{ inputs.packages }}
+      #     release-type: ${{ inputs.release-type }}
+      #     repo-user: ${{ secrets.repo-user }}
+      #     repo-pass: ${{ secrets.repo-pass }}
+
+      - name: Package List
+        id: package
+        uses: ./.github/SagaActions/beta/package
+        with:
+          packages: ${{ inputs.packages }}
+
+      - name: Check Output
+        run: |
+          echo "${{ steps.package.outputs.package-list }}"
+        shell: bash
