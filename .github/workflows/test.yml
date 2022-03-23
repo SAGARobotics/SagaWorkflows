@@ -68,6 +68,16 @@ jobs:
           path: .github/SagaActions
           ref: optim
 
+      - name: Conform
+        id: ros_conform
+        uses: ./.github/SagaActions/beta/ros_conform
+
+      - name: Package List
+        id: package
+        uses: ./.github/SagaActions/beta/package
+        with:
+          packages: ${{ inputs.packages }}
+
       # - name: Run Build test
       #   id: build
       #   uses: ./.github/SagaActions/beta/build
@@ -78,13 +88,8 @@ jobs:
       #     repo-user: ${{ secrets.repo-user }}
       #     repo-pass: ${{ secrets.repo-pass }}
 
-      - name: Package List
-        id: package
-        uses: ./.github/SagaActions/beta/package
-        with:
-          packages: ${{ inputs.packages }}
-
       - name: Check Output
         run: |
           echo ${{ steps.package.outputs.package-list }}
+          ls -1
         shell: bash
