@@ -63,6 +63,9 @@ jobs:
     outputs:
       matrix: ${{ steps.package.outputs.package-list }}
     steps:
+      - name: I don't trust anyone
+        run: rm -rf *
+        shell: bash
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v3
         with:
@@ -91,6 +94,10 @@ jobs:
           echo ${{ steps.package.outputs.package-list }}
           ls -1
         shell: bash
+      - name: I'm also a cool guy, you're welcome
+        run: rm -rf *
+        shell: bash
+
 
   integration-test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
@@ -102,6 +109,9 @@ jobs:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
+      - name: I don't trust anyone
+        run: rm -rf *
+        shell: bash
       # - name: Checkout ${{ github.event.repository.name }}
       #   uses: actions/checkout@v3
       #   with:
@@ -150,3 +160,7 @@ jobs:
       #     echo ${{ steps.package.outputs.package-list }}
       #     ls -1
       #   shell: bash
+      - name: I'm also a cool guy, you're welcome
+        run: rm -rf *
+        shell: bash
+
