@@ -58,7 +58,7 @@ on:
 
 jobs:
   prepare-jobs:
-    runs-on: ${{ fromJons(inputs.runs-on) }}
+    runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Create job parameters
     outputs:
       matrix: ${{ steps.package.outputs.package-list }}
