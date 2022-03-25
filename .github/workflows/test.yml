@@ -11,10 +11,21 @@ on:
           runners must be used (for example ubuntu-latest).
         default: '["self-hosted", "buildfarm"]'
         required: false
+      release-type:
+        type: string
+        description: |
+          The release type that this workflow should run for. Valid options are
+          'internal', 'external' or 'public'. Beware that using the 'external' 
+          or 'public' option will make your program available to others than 
+          SagaRobotics. 
+          The workflow's dependencies will also be sourced based on this 
+          parameter.
+        default: internal
+        required: false
       packages:
         type: string
         description: |
-          Stringified list of the packages that shall be used int he workflow. 
+          Stringified list of the packages that shall be used in the workflow. 
           If not provided, the default behavior is to use all packages. 
           N.B. If you include the default empty string in the list, all packages 
           will be included in the workflow. 
@@ -25,14 +36,9 @@ on:
       distribution:
         type: string
         description: |
-          The ROS distribution which the package(s) will be built for.
+          The ROS distribution which the workflow will use for building/testing
+          the package(s).
         default: 'melodic'
-        required: false
-      release-type:
-        type: string
-        description: |
-          Controls which Saga repository will be used for dependencies.
-        default: 'internal'
         required: false
     
     # TEST (TBD)
@@ -51,9 +57,11 @@ on:
         required: true
 
 jobs:
-  build:
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Build
+  prepare-jobs:
+    runs-on: ${{ fromJons(inputs.runs-on) }}
+    name: Create job parameters
+    outputs:
+      matrix: ${{ steps.package.outputs.package-list }}
     steps:
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v3
@@ -78,6 +86,49 @@ jobs:
         with:
           packages: ${{ inputs.packages }}
 
+  integration-test:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    needs: prepare-jobs
+    name: Integration tests
+
+    strategy:
+      matrix: 
+        package: ${{ fromJson(needs.prepare_job.outputs.matrix) }}
+
+    steps:
+      # - name: Checkout ${{ github.event.repository.name }}
+      #   uses: actions/checkout@v3
+      #   with:
+      #     repository: SAGARobotics/${{ github.event.repository.name }}
+      #     token: ${{ secrets.pat-token }}
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+
+      # - name: Conform
+      #   id: ros_conform
+      #   uses: ./.github/SagaActions/beta/ros_conform
+
+      - name: Create package workspace
+        uses: ./.github/SagaActions/beta/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ strategy.matrix.package }}
+
+      # - name: Run ROS tests
+      #   id: ros_tests
+      #   uses: ./.github/SagaActions/beta/testing/ros_tests
+      #   with:
+      #     rosdistro: ${{ inputs.distribution }}
+      #     package: ${{ strategy.matrix.package }}
+      #     release-type: ${{ inputs.release-type }}
+      #     repo-user: ${{ secrets.repo-user }}
+      #     repo-pass: ${{ secrets.repo-pass }}
       # - name: Run Build test
       #   id: build
       #   uses: ./.github/SagaActions/beta/build
@@ -88,8 +139,8 @@ jobs:
       #     repo-user: ${{ secrets.repo-user }}
       #     repo-pass: ${{ secrets.repo-pass }}
 
-      - name: Check Output
-        run: |
-          echo ${{ steps.package.outputs.package-list }}
-          ls -1
-        shell: bash
+      # - name: Check Output
+      #   run: |
+      #     echo ${{ steps.package.outputs.package-list }}
+      #     ls -1
+      #   shell: bash
