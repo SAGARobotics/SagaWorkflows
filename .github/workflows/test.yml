@@ -124,7 +124,7 @@ jobs:
         with:
           repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
-          package: ${{ strategy.matrix.package }}
+          package: ${{ matrix.package }}
 
       # - name: Run ROS tests
       #   id: ros_tests
