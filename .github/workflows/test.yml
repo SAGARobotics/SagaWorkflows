@@ -126,6 +126,10 @@ jobs:
           package: ${{ matrix.package }}
           catkinws-src: $CATKIN_WS_SRC
 
+      - name: Test echo
+        run: echo ${{ steps.catkin_workspace.outputs.package-list }}
+        shell: bash
+
       # - name: Run ROS tests
       #   id: ros_tests
       #   uses: ./.github/SagaActions/beta/testing/ros_tests
