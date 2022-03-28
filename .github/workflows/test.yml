@@ -56,6 +56,9 @@ on:
         description: Password for the provided user.
         required: true
 
+env:
+  CATKIN_WS_SRC: ${{ github.workspace }}/catkin_ws/src
+
 jobs:
   prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
@@ -63,9 +66,10 @@ jobs:
     outputs:
       matrix: ${{ steps.package.outputs.package-list }}
     steps:
-      - name: I don't trust anyone
+      - name: Cleanup self-hosted runner
         run: rm -rf *
         shell: bash
+
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v3
         with:
@@ -78,28 +82,20 @@ jobs:
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
           ref: optim
-
       - name: Conform
         id: ros_conform
         uses: ./.github/SagaActions/beta/ros_conform
-
       - name: Package List
         id: package
         uses: ./.github/SagaActions/beta/package
         with:
           packages: ${{ inputs.packages }}
 
-      - name: Check Output
-        run: |
-          echo ${{ steps.package.outputs.package-list }}
-          ls -1
-        shell: bash
-      - name: I'm also a cool guy, you're welcome
+      - name: Cleanup self-hosted runner
         run: rm -rf *
         shell: bash
 
-
-  integration-test:
+  build:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     needs: prepare-jobs
     name: Integration tests
@@ -109,14 +105,10 @@ jobs:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: I don't trust anyone
+      - name: Cleanup self-hosted runner
         run: rm -rf *
         shell: bash
-      # - name: Checkout ${{ github.event.repository.name }}
-      #   uses: actions/checkout@v3
-      #   with:
-      #     repository: SAGARobotics/${{ github.event.repository.name }}
-      #     token: ${{ secrets.pat-token }}
+
       - name: Checkout SagaActions
         uses: actions/checkout@v3
         with:
@@ -125,16 +117,14 @@ jobs:
           path: .github/SagaActions
           ref: optim
 
-      # - name: Conform
-      #   id: ros_conform
-      #   uses: ./.github/SagaActions/beta/ros_conform
-
       - name: Create package workspace
+        id: catkin_workspace
         uses: ./.github/SagaActions/beta/create_workspace
         with:
           repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
           package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
 
       # - name: Run ROS tests
       #   id: ros_tests
@@ -145,22 +135,24 @@ jobs:
       #     release-type: ${{ inputs.release-type }}
       #     repo-user: ${{ secrets.repo-user }}
       #     repo-pass: ${{ secrets.repo-pass }}
-      # - name: Run Build test
-      #   id: build
-      #   uses: ./.github/SagaActions/beta/build
-      #   with:
-      #     rosdistro: ${{ inputs.distribution }}
-      #     packages: ${{ inputs.packages }}
-      #     release-type: ${{ inputs.release-type }}
-      #     repo-user: ${{ secrets.repo-user }}
-      #     repo-pass: ${{ secrets.repo-pass }}
+
+      - name: Build ${{ matrix.package }}
+        id: build
+        uses: ./.github/SagaActions/beta/build
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          build-order: ${{ steps.catkin_workspace.outputs.package-list }}
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
 
       # - name: Check Output
       #   run: |
       #     echo ${{ steps.package.outputs.package-list }}
       #     ls -1
       #   shell: bash
-      - name: I'm also a cool guy, you're welcome
+      - name: Cleanup self-hosted runner
         run: rm -rf *
         shell: bash
-
