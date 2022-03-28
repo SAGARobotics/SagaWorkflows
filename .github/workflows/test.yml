@@ -124,7 +124,7 @@ jobs:
           repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
           package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
+          catkinws-src: ${{ env.CATKIN_WS_SRC }}
 
       # - name: Run ROS tests
       #   id: ros_tests
@@ -142,7 +142,7 @@ jobs:
         with:
           rosdistro: ${{ inputs.distribution }}
           package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
+          catkinws-src: ${{ env.CATKIN_WS_SRC }}
           build-order: ${{ steps.catkin_workspace.outputs.package-list }}
           release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
