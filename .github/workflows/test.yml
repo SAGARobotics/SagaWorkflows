@@ -57,7 +57,7 @@ on:
         required: true
 
 env:
-  CATKIN_WS_SRC: ${{ github.workspace }}/catkin_ws/src
+  CATKIN_WS_SRC: catkin_ws/src
 
 jobs:
   prepare-jobs:
