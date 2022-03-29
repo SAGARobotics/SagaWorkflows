@@ -130,27 +130,27 @@ jobs:
         run: echo ${{ steps.catkin_workspace.outputs.package-list }}
         shell: bash
 
-      # - name: Run ROS tests
-      #   id: ros_tests
-      #   uses: ./.github/SagaActions/beta/testing/ros_tests
-      #   with:
-      #     rosdistro: ${{ inputs.distribution }}
-      #     package: ${{ strategy.matrix.package }}
-      #     release-type: ${{ inputs.release-type }}
-      #     repo-user: ${{ secrets.repo-user }}
-      #     repo-pass: ${{ secrets.repo-pass }}
-
-      - name: Build ${{ matrix.package }}
-        id: build
-        uses: ./.github/SagaActions/beta/build
+      - name: Run ROS tests
+        id: ros_tests
+        uses: ./.github/SagaActions/beta/testing/ros_tests
         with:
           rosdistro: ${{ inputs.distribution }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-          build-order: ${{ steps.catkin_workspace.outputs.package-list }}
+          package: ${{ strategy.matrix.package }}
           release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
+
+      # - name: Build ${{ matrix.package }}
+      #   id: build
+      #   uses: ./.github/SagaActions/beta/build
+      #   with:
+      #     rosdistro: ${{ inputs.distribution }}
+      #     package: ${{ matrix.package }}
+      #     catkinws-src: $CATKIN_WS_SRC
+      #     build-order: ${{ steps.catkin_workspace.outputs.package-list }}
+      #     release-type: ${{ inputs.release-type }}
+      #     repo-user: ${{ secrets.repo-user }}
+      #     repo-pass: ${{ secrets.repo-pass }}
 
       # - name: Check Output
       #   run: |
