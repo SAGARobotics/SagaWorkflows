@@ -95,7 +95,7 @@ jobs:
         run: rm -rf *
         shell: bash
 
-  build:
+  test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     needs: prepare-jobs
     name: Integration tests
@@ -126,16 +126,13 @@ jobs:
           package: ${{ matrix.package }}
           catkinws-src: $CATKIN_WS_SRC
 
-      - name: Test echo
-        run: echo ${{ steps.catkin_workspace.outputs.package-list }}
-        shell: bash
-
       - name: Run ROS tests
         id: ros_tests
         uses: ./.github/SagaActions/beta/testing/ros_tests
         with:
           rosdistro: ${{ inputs.distribution }}
           package: ${{ strategy.matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
           release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
