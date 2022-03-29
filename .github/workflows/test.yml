@@ -131,7 +131,7 @@ jobs:
         uses: ./.github/SagaActions/beta/testing/ros_tests
         with:
           rosdistro: ${{ inputs.distribution }}
-          package: ${{ strategy.matrix.package }}
+          package: ${{ matrix.package }}
           catkinws-src: $CATKIN_WS_SRC
           release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
