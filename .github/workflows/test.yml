@@ -2,7 +2,6 @@ on:
   workflow_call:
 
     inputs:
-    # GENERAL
       runs-on:
         type: string
         description: |
@@ -31,8 +30,6 @@ on:
           will be included in the workflow. 
         default: '[]'
         required: false
-
-    # BUILD
       distribution:
         type: string
         description: |
@@ -41,8 +38,6 @@ on:
         default: 'melodic'
         required: false
     
-    # TEST (TBD)
-
     secrets:
       pat-token:
         description: |
@@ -136,24 +131,120 @@ jobs:
           release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
+      
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
 
-      # - name: Build ${{ matrix.package }}
-      #   id: build
-      #   uses: ./.github/SagaActions/beta/build
-      #   with:
-      #     rosdistro: ${{ inputs.distribution }}
-      #     package: ${{ matrix.package }}
-      #     catkinws-src: $CATKIN_WS_SRC
-      #     build-order: ${{ steps.catkin_workspace.outputs.package-list }}
-      #     release-type: ${{ inputs.release-type }}
-      #     repo-user: ${{ secrets.repo-user }}
-      #     repo-pass: ${{ secrets.repo-pass }}
+  build:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    needs: [prepare-jobs, test]
+    name: Build
 
-      # - name: Check Output
-      #   run: |
-      #     echo ${{ steps.package.outputs.package-list }}
-      #     ls -1
-      #   shell: bash
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+      
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/beta/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          
+      - name: Build ${{ matrix.package }}
+        id: build
+        uses: ./.github/SagaActions/beta/build
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          build-order: ${{ steps.catkin_workspace.outputs.package-list }}
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.package }}-artifact
+          path: ${{ steps.build.outputs.package_path }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+  release:
+    needs: [build, prepare-jobs]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Release
+
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+
+      - name: Download artifact
+        id: download
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.package }}-artifact
+          path: ${{ github.workspace }}/artifacts/
+
+      - name: Find debian filename
+        id: name
+        run: |
+          echo "Artifacts:"
+          ls ${{ steps.download.outputs.download-path }}
+          DEBFILE=$(ls ${{ steps.download.outputs.download-path }} | grep -e "\.deb$")
+          echo "::set-output name=debfile::$DEBFILE"
+        shell: bash
+
+      - name: Release
+        uses: ./.github/SagaActions/beta/release
+        with:
+          debian-file: ${{ steps.name.outputs.debfile }}
+          package: ${{ matrix.pacakge }}
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-write-user }}
+          repo-pass: ${{ secrets.repo-write-pass }}
+      
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/beta/rosdep
+        with:
+          debian-package-name: ${{ steps.name.outputs.debfile }}
+          ros-package-name: ${{ matrix.package }}
+          repo-token: ${{ secrets.pat-token }}
+          release-type: ${{ inputs.release-type }}
+
       - name: Cleanup self-hosted runner
         run: rm -rf *
         shell: bash
