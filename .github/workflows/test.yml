@@ -90,6 +90,47 @@ jobs:
         run: rm -rf *
         shell: bash
 
+  checks:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    needs: prepare-jobs
+    name: Checks
+
+    strategy:
+      matrix: 
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/beta/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+      
+      - name: Preform checks
+        uses: ./.github/SagaActions/beta/checks
+        with:
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+      
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
   test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     needs: prepare-jobs
@@ -138,7 +179,7 @@ jobs:
 
   # build:
   #   runs-on: ${{ fromJson(inputs.runs-on) }}
-  #   needs: [prepare-jobs, test]
+  #   needs: [prepare-jobs, test, checks]
   #   name: Build
 
   #   strategy:
@@ -192,7 +233,7 @@ jobs:
   #       shell: bash
 
   # release:
-  #   needs: [build, prepare-jobs]
+  #   needs: [build, prepare-jobs, checks]
   #   runs-on: ${{ fromJson(inputs.runs-on) }}
   #   name: Release
 
