@@ -272,15 +272,15 @@ jobs:
           echo "::set-output name=os_version::$OS_VERSION"
         shell: bash
 
-      - name: Release
-        uses: ./.github/SagaActions/beta/release
-        with:
-          debian-file: ${{ steps.name.outputs.debfile }}
-          package-location: ${{ steps.download.outputs.download-path }}
-          distribution: ${{ steps.name.outputs.os_version }}
-          release-type: ${{ inputs.release-type }}
-          repo-user: ${{ secrets.repo-user }}
-          repo-pass: ${{ secrets.repo-pass }}
+      # - name: Release
+      #   uses: ./.github/SagaActions/beta/release
+      #   with:
+      #     debian-file: ${{ steps.name.outputs.debfile }}
+      #     package-location: ${{ steps.download.outputs.download-path }}
+      #     distribution: ${{ steps.name.outputs.os_version }}
+      #     release-type: ${{ inputs.release-type }}
+      #     repo-user: ${{ secrets.repo-user }}
+      #     repo-pass: ${{ secrets.repo-pass }}
       
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/update-saga-rosdep
