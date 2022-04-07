@@ -233,7 +233,7 @@ jobs:
         shell: bash
 
   release:
-    needs: [build, prepare-jobs, checks]
+    needs: [build, prepare-jobs] #, checks]
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Release
 
