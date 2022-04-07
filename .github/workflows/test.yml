@@ -222,6 +222,8 @@ jobs:
       
       - name: Debug
         run: |
+          pwd
+          ls
           ls -a ${{ matrix.package }}
           echo "BIN FILES:"
           ls -a ${{ matrix.package }}/bin
@@ -231,7 +233,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.package }}-artifact
-          path: ${{ github.workspace}}${{ steps.build.outputs.package_path }}
+          path: ${{ steps.build.outputs.package_path }}
           if-no-files-found: error
           retention-days: 1
 
