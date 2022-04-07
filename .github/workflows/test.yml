@@ -179,7 +179,7 @@ jobs:
 
   build:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    needs: [prepare-jobs, test, checks]
+    needs: [prepare-jobs] #, test, checks]
     name: Build
 
     strategy:
