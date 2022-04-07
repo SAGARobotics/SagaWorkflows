@@ -90,92 +90,92 @@ jobs:
         run: rm -rf *
         shell: bash
 
-  checks:
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    needs: prepare-jobs
-    name: Checks
+  # checks:
+  #   runs-on: ${{ fromJson(inputs.runs-on) }}
+  #   needs: prepare-jobs
+  #   name: Checks
 
-    strategy:
-      matrix: 
-        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+  #   strategy:
+  #     matrix: 
+  #       package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
-    steps:
-      - name: Cleanup self-hosted runner
-        run: rm -rf *
-        shell: bash
+  #   steps:
+  #     - name: Cleanup self-hosted runner
+  #       run: rm -rf *
+  #       shell: bash
 
-      - name: Checkout SagaActions
-        uses: actions/checkout@v3
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-          ref: optim
+  #     - name: Checkout SagaActions
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: SAGARobotics/SagaActions
+  #         token: ${{ secrets.pat-token }}
+  #         path: .github/SagaActions
+  #         ref: optim
 
-      - name: Create package workspace
-        id: catkin_workspace
-        uses: ./.github/SagaActions/beta/create_workspace
-        with:
-          repository: ${{ github.event.repository.name }}
-          pat-token: ${{ secrets.pat-token }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
+  #     - name: Create package workspace
+  #       id: catkin_workspace
+  #       uses: ./.github/SagaActions/beta/create_workspace
+  #       with:
+  #         repository: ${{ github.event.repository.name }}
+  #         pat-token: ${{ secrets.pat-token }}
+  #         package: ${{ matrix.package }}
+  #         catkinws-src: $CATKIN_WS_SRC
       
-      - name: Preform checks
-        uses: ./.github/SagaActions/beta/checks
-        with:
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
+  #     - name: Preform checks
+  #       uses: ./.github/SagaActions/beta/checks
+  #       with:
+  #         package: ${{ matrix.package }}
+  #         catkinws-src: $CATKIN_WS_SRC
       
-      - name: Cleanup self-hosted runner
-        run: rm -rf *
-        shell: bash
+  #     - name: Cleanup self-hosted runner
+  #       run: rm -rf *
+  #       shell: bash
 
-  test:
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    needs: prepare-jobs
-    name: Integration tests
+  # test:
+  #   runs-on: ${{ fromJson(inputs.runs-on) }}
+  #   needs: prepare-jobs
+  #   name: Integration tests
 
-    strategy:
-      matrix: 
-        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+  #   strategy:
+  #     matrix: 
+  #       package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
-    steps:
-      - name: Cleanup self-hosted runner
-        run: rm -rf *
-        shell: bash
+  #   steps:
+  #     - name: Cleanup self-hosted runner
+  #       run: rm -rf *
+  #       shell: bash
 
-      - name: Checkout SagaActions
-        uses: actions/checkout@v3
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-          ref: optim
+  #     - name: Checkout SagaActions
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: SAGARobotics/SagaActions
+  #         token: ${{ secrets.pat-token }}
+  #         path: .github/SagaActions
+  #         ref: optim
 
-      - name: Create package workspace
-        id: catkin_workspace
-        uses: ./.github/SagaActions/beta/create_workspace
-        with:
-          repository: ${{ github.event.repository.name }}
-          pat-token: ${{ secrets.pat-token }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
+  #     - name: Create package workspace
+  #       id: catkin_workspace
+  #       uses: ./.github/SagaActions/beta/create_workspace
+  #       with:
+  #         repository: ${{ github.event.repository.name }}
+  #         pat-token: ${{ secrets.pat-token }}
+  #         package: ${{ matrix.package }}
+  #         catkinws-src: $CATKIN_WS_SRC
 
-      - name: Run ROS tests
-        id: ros_tests
-        uses: ./.github/SagaActions/beta/testing/ros_tests
-        with:
-          rosdistro: ${{ inputs.distribution }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-          release-type: ${{ inputs.release-type }}
-          repo-user: ${{ secrets.repo-user }}
-          repo-pass: ${{ secrets.repo-pass }}
+  #     - name: Run ROS tests
+  #       id: ros_tests
+  #       uses: ./.github/SagaActions/beta/testing/ros_tests
+  #       with:
+  #         rosdistro: ${{ inputs.distribution }}
+  #         package: ${{ matrix.package }}
+  #         catkinws-src: $CATKIN_WS_SRC
+  #         release-type: ${{ inputs.release-type }}
+  #         repo-user: ${{ secrets.repo-user }}
+  #         repo-pass: ${{ secrets.repo-pass }}
       
-      - name: Cleanup self-hosted runner
-        run: rm -rf *
-        shell: bash
+  #     - name: Cleanup self-hosted runner
+  #       run: rm -rf *
+  #       shell: bash
 
   build:
     runs-on: ${{ fromJson(inputs.runs-on) }}
@@ -224,7 +224,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.package }}-artifact
-          path: ${{ steps.build.outputs.package_path }}
+          path: ${{ github.workspace}}/${{ steps.build.outputs.package_path }}
           if-no-files-found: error
           retention-days: 1
 
