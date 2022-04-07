@@ -224,7 +224,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.package }}-artifact
-          path: ${{ github.workspace}}/${{ steps.build.outputs.package_path }}
+          path: ${{ github.workspace}}${{ steps.build.outputs.package_path }}
           if-no-files-found: error
           retention-days: 1
 
