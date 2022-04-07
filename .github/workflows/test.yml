@@ -283,7 +283,7 @@ jobs:
       #     repo-pass: ${{ secrets.repo-pass }}
       
       - name: Update saga-rosdep
-        uses: ./.github/SagaActions/update-saga-rosdep
+        uses: ./.github/SagaActions/beta/rosdep
         with:
           debian-package: ${{ steps.name.outputs.debfile }}
           ros-package-name: ${{ matrix.package }}
