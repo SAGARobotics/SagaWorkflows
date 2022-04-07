@@ -220,6 +220,11 @@ jobs:
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
       
+      - name: Debug
+        run: |
+          ls -a
+        shell: bash
+      
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
