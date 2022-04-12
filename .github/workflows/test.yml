@@ -58,8 +58,10 @@ jobs:
   prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Create job parameters
+
     outputs:
       matrix: ${{ steps.workspace_dependencies.outputs.package-list }}
+
     steps:
       - name: Cleanup self-hosted runner
         run: rm -rf *
@@ -281,12 +283,30 @@ jobs:
       #     release-type: ${{ inputs.release-type }}
       #     repo-user: ${{ secrets.repo-user }}
       #     repo-pass: ${{ secrets.repo-pass }}
-      
+
+  update-rosdep:
+    needs: release
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Update ROS dependency file
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/beta/rosdep
         with:
           debian-package: ${{ steps.name.outputs.debfile }}
-          ros-package-name: ${{ matrix.package }}
+          ros-package-names: ${{ matrix.package }}
           ros-distribution: ${{ inputs.distribution }}
           release-type: ${{ inputs.release-type }}
           repo-init: ${{ github.event.repository.name }}
