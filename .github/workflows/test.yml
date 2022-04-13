@@ -261,7 +261,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
-          path: ${{ github.workspace }}/artifacts/
+          path: ${{ github.workspace }}
 
       - name: Find debian filename
         id: name
@@ -305,8 +305,7 @@ jobs:
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/beta/rosdep
         with:
-          debian-package: ${{ steps.name.outputs.debfile }}
-          ros-package-names: ${{ matrix.package }}
+          ros-package-list: ${{ matrix.package }}
           ros-distribution: ${{ inputs.distribution }}
           release-type: ${{ inputs.release-type }}
           repo-init: ${{ github.event.repository.name }}
