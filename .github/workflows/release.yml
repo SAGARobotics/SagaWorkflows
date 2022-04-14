@@ -1,236 +1,251 @@
 on:
   workflow_call:
-    inputs:
-      ros-distributions:
-        description: |
-          Stringified list of ROS distributions the package(s) will be built for
-        required: true
-        default: melodic
-        type: string
-      packages:
-        description: |
-          Stringified list of ROS packages that this workflow will run for. Default
-          behavior will release all packages in the repo.
-          If a list is provided, only the packages defined in the list will be built.
-        required: false
-        default: 'release-all'
-        type: string
 
-      catch-dir:
-        description: |
-          Path to catch test files from the package's directory
-        default: disabled
-        required: false
-        type: string
-      gtest-dir:
-        description: |
-          Path to directory where google test files exist, from the 
-          package's directory
-        default: disabled
-        required: false
-        type: string
-      no-rostests:
-        description: | 
-          Control parameter for running rostests. 
-        default: false
-        required: false
-        type: boolean
-      release-type:
-        description: |
-          Variable controlling where the produced package is released. Valid 
-          values are "dev" (default) and "prod"
-        default: 'dev'
-        required: false
-        type: string
+    inputs:
       runs-on:
+        type: string
         description: |
-          Where this workflow should run. Self-hosted buildfarm (default) is 
-          only available to private repositories.
+          Stringified list for choosing github runners. The default is using the 
+          self-hosted buildfarm, but for public repositories the public-hosted 
+          runners must be used (for example ubuntu-latest).
         default: '["self-hosted", "buildfarm"]'
         required: false
+      release-type:
         type: string
-
+        description: |
+          The release type that this workflow should run for. Valid options are
+          'internal', 'external' or 'public'. Beware that using the 'external' 
+          or 'public' option will make your program available to others than 
+          SagaRobotics. 
+          The workflow's dependencies will also be sourced based on this 
+          parameter.
+        default: internal
+        required: false
+      packages:
+        type: string
+        description: |
+          Stringified list of the packages that shall be used in the workflow. 
+          If not provided, the default behavior is to use all packages. 
+          N.B. If you include the default empty string in the list, all packages 
+          will be included in the workflow. 
+        default: '[]'
+        required: false
+      distribution:
+        type: string
+        description: |
+          The ROS distribution which the workflow will use for building/testing
+          the package(s).
+        default: 'melodic'
+        required: false
+    
     secrets:
       pat-token:
+        description: |
+          Personal access token with at least read privileges for all 
+          repositories in the organization.
         required: true
-      dev-apt-read-user:
+      repo-user:
+        description: Username with read/write privileges to Saga's repository.
         required: true
-      dev-apt-read-write-user:
+      repo-pass:
+        description: Password for the provided user.
         required: true
 
+env:
+  CATKIN_WS_SRC: catkin_ws/src
+
 jobs:
-  create-matrix:
+  prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Prepare Job matrix
+    name: Create job parameters
+
     outputs:
-      matrix: ${{ steps.create-matrix.outputs.matrix }}
+      matrix: ${{ steps.workspace_dependencies.outputs.package-list }}
+
     steps:
-      - name: Deprecation warning
-        run: echo "::warning::This version of the release pipeline will be deprecated by start of season 2023"
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
         shell: bash
-      - name:  Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
+
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
       - name: Checkout SagaActions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-      - name: Create matrix
-        id: create-matrix
-        uses: ./.github/SagaActions/create-matrix
-        with: 
-          pat-token: ${{ secrets.pat-token }}
-          ros-distributions: ${{ inputs.ros-distributions }}
+      - name: Conform
+        id: ros_conform
+        uses: ./.github/SagaActions/ros_conform
+      - name: Workspace Dependencies
+        id: workspace_dependencies
+        uses: ./.github/SagaActions/workspace_dependencies
+        with:
           packages: ${{ inputs.packages }}
 
-  unit-tests:
-    needs: create-matrix
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+  checks:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Unit tests
+    needs: prepare-jobs
+    name: Checks
 
     strategy:
-      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
+      matrix: 
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
         with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
+          repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
-      - name: Conform
-        run: |
-          if [[ -f package.xml ]];
-          then
-            mkdir ${{ github.event.repository.name }}
-            mv `\ls -1 | grep -v ${{ github.event.repository.name }}` ${{ github.event.repository.name }}
-          fi
+          path: .github/SagaActions
+
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+      
+      - name: Preform checks
+        uses: ./.github/SagaActions/checks
+        with:
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+      
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
         shell: bash
 
-      - name: Catch
-        if: ${{ inputs.catch-dir != 'disabled' }}
-        run: |
-          cd ${{ github.workspace }}/${{ matrix.package }}/${{ inputs.catch-dir }}
-          g++ -std=c++11 -Wall -o catchtests *.cpp
-          ./catchtests
-        shell: bash
-
-      - name: GTest
-        if: ${{ inputs.gtest-dir != 'disabled' }}
-        run: |
-          echo "::warning::Support for Google's test suite is not yet implemented"
-        shell: bash
-
-  rostests:
-    if: $${{ !inputs.no-rostests }}
-    needs: create-matrix
+  test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
+    needs: prepare-jobs
     name: Integration tests
 
     strategy:
-      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
+      matrix: 
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
       - name: Checkout SagaActions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-      - name: Conform
-        run: |
-          ls ${{ github.workspace }}
-          if [[ -f package.xml ]];
-          then
-            echo "Was single package -- moving..."
-            mkdir ${{ github.event.repository.name }}
-            mv `\ls -1 | grep -v ${{ github.event.repository.name }}` ${{ github.event.repository.name }}
-          fi
-        shell: bash
 
-      - name: Rostests
-        uses: ./.github/SagaActions/testing/rostests
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/create_workspace
         with:
-          ros-distribution: ${{ matrix.ros-distro }}
-          package-to-test: ${{ matrix.package }}
-          saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
-          depend-repo: ${{ inputs.release-type }}
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+
+      - name: Run ROS tests
+        id: ros_tests
+        uses: ./.github/SagaActions/testing/ros_tests
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+      
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
 
   build:
-    needs: [unit-tests, rostests, create-matrix]
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Build Debian package
+    needs: [prepare-jobs, test, checks]
+    name: Build
 
     strategy:
-      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
       - name: Checkout SagaActions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-      - name: Conform
-        run: |
-          if [[ -f package.xml ]];
-          then
-            mkdir ${{ github.event.repository.name }}
-            mv `\ls -1 | grep -v ${{ github.event.repository.name }}` ${{ github.event.repository.name }}
-          fi
-        shell: bash
-
-      # - name: Prerelease-checks
-      #   uses: ./.github/SagaActions/prerelease-check
-      #   with:
-      #     ros-package-name: ${{ inputs.package }}
-      #     repo-user: ${{ secrets.dev-apt-read-user }}
-      - name: Build .deb package
+      
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          
+      - name: Build ${{ matrix.package }}
         id: build
-        uses: ./.github/SagaActions/build-debian
+        uses: ./.github/SagaActions/build
         with:
-          ros-distribution: ${{ matrix.ros-distro }}
-          package-to-build: ${{ matrix.package }}
-          saga-deb-read-user: ${{ secrets.dev-apt-read-user }}
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          build-order: ${{ steps.catkin_workspace.outputs.package-list }}
           release-type: ${{ inputs.release-type }}
-
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+      
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.package }}-${{ matrix.ros-distro }}-artifact
-          path: ${{ github.workspace }}/${{ matrix.package }}/bin/${{ steps.build.outputs.deb_package_name }}
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ steps.build.outputs.package_path }}
           if-no-files-found: error
           retention-days: 1
 
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
   release:
-    needs: [build, create-matrix]
+    needs: [build, prepare-jobs, checks]
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Upload
+    name: Release
 
     strategy:
-      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
       - name: Checkout SagaActions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
@@ -238,10 +253,10 @@ jobs:
 
       - name: Download artifact
         id: download
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
-          name: ${{ matrix.package }}-${{ matrix.ros-distro }}-artifact
-          path: ${{ github.workspace }}/artifacts/${{ matrix.ros-distro }}
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ github.workspace }}
 
       - name: Find debian filename
         id: name
@@ -250,22 +265,49 @@ jobs:
           ls ${{ steps.download.outputs.download-path }}
           DEBFILE=$(ls ${{ steps.download.outputs.download-path }} | grep -e "\.deb$")
           echo "::set-output name=debfile::$DEBFILE"
+          OS_VERSION=$(echo "$DEBFILE" | sed -rn "s/.*_[0-9]+\.[0-9]+\.[0-9]+-[0-9]+([a-z]+)\..*/\1/p")
+          echo "::set-output name=os_version::$OS_VERSION"
         shell: bash
 
-      - name: Release package to repository
-        id: apt-release
-        uses: ./.github/SagaActions/push-package
+      - name: Release
+        uses: ./.github/SagaActions/release
         with:
-          debian-package-name: ${{ steps.name.outputs.debfile }}
+          debian-file: ${{ steps.name.outputs.debfile }}
           package-location: ${{ steps.download.outputs.download-path }}
-          ros-package-name: ${{ matrix.package }}
-          repo-user: ${{ secrets.dev-apt-read-write-user }}
+          distribution: ${{ steps.name.outputs.os_version }}
           release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+
+  update-rosdep:
+    needs: release
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Update ROS dependency file
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
 
       - name: Update saga-rosdep
-        uses: ./.github/SagaActions/update-saga-rosdep
+        uses: ./.github/SagaActions/rosdep
         with:
-          debian-package-name: ${{ steps.name.outputs.debfile }}
-          ros-package-name: ${{ matrix.package }}
-          repo-token: ${{ secrets.pat-token }}
+          ros-package-list: ${{ matrix.package }}
+          ros-distribution: ${{ inputs.distribution }}
           release-type: ${{ inputs.release-type }}
+          repo-init: ${{ github.event.repository.name }}
+          actor-init: ${{ github.actor }}
+          workflow-init: ${{ github.workflow }}
+          repo-token: ${{ secrets.pat-token }}
+          
+
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash

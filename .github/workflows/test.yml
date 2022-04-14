@@ -1,116 +1,319 @@
 on:
   workflow_call:
+
     inputs:
-      ros-distributions:
-        description: |
-          Stringified list of ROS distributions the package(s) will be built for
-        required: true
-        default: melodic
-        type: string
-      packages:
-        description: |
-          Stringified list of ROS packages that this workflow will run for. Default
-          behavior will release all packages in the repo, or, if the repository contains
-          a single package, release the one package that the repository contains.
-          If a list is provided, only the packages defined in the list will be built.
-        required: false
-        default: 'release-all'
-        type: string
       runs-on:
+        type: string
         description: |
-          List of which runners the workflow should use.
+          Stringified list for choosing github runners. The default is using the 
+          self-hosted buildfarm, but for public repositories the public-hosted 
+          runners must be used (for example ubuntu-latest).
         default: '["self-hosted", "buildfarm"]'
         required: false
+      release-type:
         type: string
-
-      saga-repo:
         description: |
-          Variable controlling where the produced package is released. Valid 
-          values are "dev" (default) and "prod"
-        default: 'dev'
+          The release type that this workflow should run for. Valid options are
+          'internal', 'external' or 'public'. Beware that using the 'external' 
+          or 'public' option will make your program available to others than 
+          SagaRobotics. 
+          The workflow's dependencies will also be sourced based on this 
+          parameter.
+        default: internal
         required: false
+      packages:
         type: string
-      require-lcas:
-        description: Boolean for requiring LCAS compiled packages
-        default: 'false'
-        required: false
-        type: string
-      require-rasberry:
         description: |
-          Boolean for requiring RASBerry Core. Will automatically set
-          require-lcas to true.
-        default: 'false'
+          Stringified list of the packages that shall be used in the workflow. 
+          If not provided, the default behavior is to use all packages. 
+          N.B. If you include the default empty string in the list, all packages 
+          will be included in the workflow. 
+        default: '[]'
         required: false
+      distribution:
         type: string
-
+        description: |
+          The ROS distribution which the workflow will use for building/testing
+          the package(s).
+        default: 'melodic'
+        required: false
+    
     secrets:
       pat-token:
+        description: |
+          Personal access token with at least read privileges for all 
+          repositories in the organization.
         required: true
-      dev-apt-read-user:
+      repo-user:
+        description: Username with read/write privileges to Saga's repository.
         required: true
-      dev-apt-read-write-user:
+      repo-pass:
+        description: Password for the provided user.
         required: true
-      saga-dockerimage-username:
-        required: false
-      saga-dockerimage-password:
-        required: false
+
+env:
+  CATKIN_WS_SRC: catkin_ws/src
 
 jobs:
-  create-matrix:
+  prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Prepare Job matrix
+    name: Create job parameters
+
     outputs:
-      matrix: ${{ steps.create-matrix.outputs.matrix }}
+      matrix: ${{ steps.workspace_dependencies.outputs.package-list }}
+
     steps:
-      - name:  Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout ${{ github.event.repository.name }}
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
       - name: Checkout SagaActions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-      - name: Create matrix
-        id: create-matrix
-        uses: ./.github/SagaActions/create-matrix
-        with: 
-          pat-token: ${{ secrets.pat-token }}
-          ros-distributions: ${{ inputs.ros-distributions }}
+          ref: optim
+      - name: Conform
+        id: ros_conform
+        uses: ./.github/SagaActions/beta/ros_conform
+      - name: Workspace Dependencies
+        id: workspace_dependencies
+        uses: ./.github/SagaActions/beta/workspace_dependencies
+        with:
           packages: ${{ inputs.packages }}
 
-  testing_actions:
-    needs: create-matrix
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+  checks:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Testing Actions
+    needs: prepare-jobs
+    name: Checks
 
     strategy:
-      matrix: ${{ fromJson(needs.create-matrix.outputs.matrix) }}
+      matrix: 
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Checkout ${{ github.event.repository.name }}
-        uses: actions/checkout@v2
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
       - name: Checkout SagaActions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
+          ref: optim
 
-      - name: ACTION UNDER TEST
-        uses: ./.github/SagaActions/docker_base
-        with: 
-          ros-distribution: ${{ matrix.ros-distro }}
-          repo-name: ${{ inputs.repo-name }}
-          packages: ${{ inputs.packages }}
-          saga-repo: ${{ inputs.saga-repo }}
-          require-rasberry: ${{ inputs.require-rasberry }}
-          saga-dockerimage-username: ${{ secrets.saga-dockerimage-username }}
-          saga-dockerimage-password: ${{ secrets.saga-dockerimage-password }}
-          saga-deb-user: ${{ secrets.dev-apt-read-user }}
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/beta/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+      
+      - name: Preform checks
+        uses: ./.github/SagaActions/beta/checks
+        with:
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+      
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+  test:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    needs: prepare-jobs
+    name: Integration tests
+
+    strategy:
+      matrix: 
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/beta/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+
+      - name: Run ROS tests
+        id: ros_tests
+        uses: ./.github/SagaActions/beta/testing/ros_tests
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+      
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+  build:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    needs: [prepare-jobs, test, checks]
+    name: Build
+
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+      
+      - name: Create package workspace
+        id: catkin_workspace
+        uses: ./.github/SagaActions/beta/create_workspace
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          
+      - name: Build ${{ matrix.package }}
+        id: build
+        uses: ./.github/SagaActions/beta/build
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          catkinws-src: $CATKIN_WS_SRC
+          build-order: ${{ steps.catkin_workspace.outputs.package-list }}
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ steps.build.outputs.package_path }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+  release:
+    needs: [build, prepare-jobs, checks]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Release
+
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+
+      - name: Download artifact
+        id: download
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ github.workspace }}
+
+      - name: Find debian filename
+        id: name
+        run: |
+          echo "Artifacts:"
+          ls ${{ steps.download.outputs.download-path }}
+          DEBFILE=$(ls ${{ steps.download.outputs.download-path }} | grep -e "\.deb$")
+          echo "::set-output name=debfile::$DEBFILE"
+          OS_VERSION=$(echo "$DEBFILE" | sed -rn "s/.*_[0-9]+\.[0-9]+\.[0-9]+-[0-9]+([a-z]+)\..*/\1/p")
+          echo "::set-output name=os_version::$OS_VERSION"
+        shell: bash
+
+      - name: Release
+        uses: ./.github/SagaActions/beta/release
+        with:
+          debian-file: ${{ steps.name.outputs.debfile }}
+          package-location: ${{ steps.download.outputs.download-path }}
+          distribution: ${{ steps.name.outputs.os_version }}
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+
+  update-rosdep:
+    needs: release
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Update ROS dependency file
+
+    steps:
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
+
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: optim
+
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/beta/rosdep
+        with:
+          ros-package-list: ${{ matrix.package }}
+          ros-distribution: ${{ inputs.distribution }}
+          release-type: ${{ inputs.release-type }}
+          repo-init: ${{ github.event.repository.name }}
+          actor-init: ${{ github.actor }}
+          workflow-init: ${{ github.workflow }}
+          repo-token: ${{ secrets.pat-token }}
+          
+
+      - name: Cleanup self-hosted runner
+        run: rm -rf *
+        shell: bash
