@@ -65,6 +65,9 @@ jobs:
     outputs:
       matrix: ${{ steps.create-matrix.outputs.matrix }}
     steps:
+      - name: Deprecation warning
+        run: echo "::warning::This version of the release pipeline will be deprecated by start of season 2023"
+        shell: bash
       - name:  Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v2
         with:
