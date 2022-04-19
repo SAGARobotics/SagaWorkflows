@@ -289,7 +289,7 @@ jobs:
           repo-pass: ${{ secrets.repo-pass }}
 
   update-rosdep:
-    needs: release
+    needs: [prepare-jobs, release]
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Update ROS dependency file
 
@@ -309,7 +309,7 @@ jobs:
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/rosdep
         with:
-          ros-package-list: ${{ matrix.package }}
+          ros-package-list: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
           ros-distribution: ${{ inputs.distribution }}
           release-type: ${{ inputs.release-type }}
           repo-init: ${{ github.event.repository.name }}
