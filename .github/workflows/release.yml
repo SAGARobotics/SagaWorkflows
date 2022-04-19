@@ -131,7 +131,7 @@ jobs:
           catkinws-src: $CATKIN_WS_SRC
       
       - name: Preform pre-release checks
-        if: ${{ !inputs.disable-checks }}
+        if: ${{ inputs.disable-checks != 'true' }}
         uses: ./.github/SagaActions/checks
         with:
           package: ${{ matrix.package }}
