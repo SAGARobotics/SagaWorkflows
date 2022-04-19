@@ -316,7 +316,7 @@ jobs:
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/rosdep
         with:
-          ros-package-list: "${{ fromJson(needs.prepare-jobs.outputs.matrix) }}"
+          ros-package-list: ${{ needs.prepare-jobs.outputs.matrix }}
           ros-distribution: ${{ inputs.distribution }}
           release-type: ${{ inputs.release-type }}
           repo-init: ${{ github.event.repository.name }}
