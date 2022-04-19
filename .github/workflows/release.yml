@@ -38,10 +38,10 @@ on:
         default: 'melodic'
         required: false
       disable-checks:
-        type: boolean
+        type: string
         description: |
           Disables the pre-release checking action
-        default: false
+        default: 'false'
         required: false
     
     secrets:
