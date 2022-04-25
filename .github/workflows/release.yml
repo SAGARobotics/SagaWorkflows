@@ -253,6 +253,24 @@ jobs:
         run: rm -rf *
         shell: bash
 
+  build-status:
+    if: ${{ always() }}
+    needs: [build]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Build Status
+
+    steps:
+      - name: Status for matrix build jobs
+        run: |
+          failed=$(curl -X GET -s -u "sagarobotics-cicd:${{ secrets.pat-token }}" https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs | jq -c 'any (.jobs[]; .conclusion == "failure")')
+          if [[ "$failed" == "true" ]];
+          then
+            exit 1;
+          else
+            exit 0
+          fi
+        shell: bash
+
   release:
     if: ${{ inputs.release == 'true' }}
     needs: [build, prepare-jobs, checks]
