@@ -91,6 +91,7 @@ jobs:
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
+          submodules: true
           path: repository
 
       - name: Conform
@@ -262,7 +263,9 @@ jobs:
     steps:
       - name: Status for matrix build jobs
         run: |
-          failed=$(curl -X GET -s -u "sagarobotics-cicd:${{ secrets.pat-token }}" https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs | jq -c 'any (.jobs[]; .conclusion == "failure")')
+          failed=$(curl -X GET -s -u "sagarobotics-cicd:${{ secrets.pat-token }}" \
+                    https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs | \
+                    jq -c 'any (.jobs[]; .conclusion == "failure")')
           if [[ "$failed" == "true" ]];
           then
             exit 1;
