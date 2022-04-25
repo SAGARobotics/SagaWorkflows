@@ -43,6 +43,12 @@ on:
           Disables the pre-release checking action
         default: 'false'
         required: false
+      release:
+        type: string
+        description: |
+          Control input for releasing the repo.
+        default: 'false'
+        required: false
     
     secrets:
       pat-token:
@@ -248,6 +254,7 @@ jobs:
         shell: bash
 
   release:
+    if: ${{ inputs.release == 'true' }}
     needs: [build, prepare-jobs, checks]
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Release
@@ -298,6 +305,7 @@ jobs:
           repo-pass: ${{ secrets.repo-pass }}
 
   update-rosdep:
+    if: ${{ inputs.release == 'true' }}
     needs: [prepare-jobs, release]
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Update ROS dependency file
