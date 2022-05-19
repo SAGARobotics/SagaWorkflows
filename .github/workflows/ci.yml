@@ -75,11 +75,6 @@ jobs:
       matrix: ${{ steps.workspace_dependencies.outputs.package-list }}
 
     steps:
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
       - name: Checkout SagaActions
         uses: actions/checkout@v3
         with:
@@ -104,26 +99,17 @@ jobs:
         with:
           packages: ${{ inputs.packages }}
 
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
   checks:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     needs: prepare-jobs
     name: Checks
 
     strategy:
+      fail-fast: false
       matrix: 
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
       - name: Checkout SagaActions
         uses: actions/checkout@v3
         with:
@@ -147,11 +133,6 @@ jobs:
         with:
           package: ${{ matrix.package }}
           catkinws-src: $CATKIN_WS_SRC
-      
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
 
   test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
@@ -159,15 +140,11 @@ jobs:
     name: Integration tests
 
     strategy:
+      fail-fast: false
       matrix: 
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
       - name: Checkout SagaActions
         uses: actions/checkout@v3
         with:
@@ -195,11 +172,6 @@ jobs:
           release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
-      
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
 
   build:
     runs-on: ${{ fromJson(inputs.runs-on) }}
@@ -211,11 +183,6 @@ jobs:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
       - name: Checkout SagaActions
         uses: actions/checkout@v3
         with:
@@ -253,11 +220,6 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
   build-status:
     if: ${{ always() }}
     needs: [build]
@@ -289,11 +251,6 @@ jobs:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
       - name: Checkout SagaActions
         uses: actions/checkout@v3
         with:
@@ -337,11 +294,6 @@ jobs:
     name: Update ROS dependency file
 
     steps:
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
-
       - name: Checkout SagaActions
         uses: actions/checkout@v3
         with:
@@ -360,9 +312,3 @@ jobs:
           actor-init: ${{ github.actor }}
           workflow-init: ${{ github.workflow }}
           repo-token: ${{ secrets.pat-token }}
-          
-
-      - name: Cleanup self-hosted runner
-        continue-on-error: true
-        run: rm -rf *
-        shell: bash
