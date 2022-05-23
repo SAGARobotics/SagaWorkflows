@@ -81,7 +81,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.0
+          ref: v2.1
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v3
         with:
@@ -116,7 +116,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.0
+          ref: v2.1
 
       - name: Create package workspace
         id: catkin_workspace
@@ -133,6 +133,7 @@ jobs:
         with:
           package: ${{ matrix.package }}
           catkinws-src: $CATKIN_WS_SRC
+          release-type: ${{ inputs.release-type }}
 
   test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
@@ -151,7 +152,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.0
+          ref: v2.1
 
       - name: Create package workspace
         id: catkin_workspace
@@ -189,7 +190,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.0
+          ref: v2.1
       
       - name: Create package workspace
         id: catkin_workspace
@@ -257,7 +258,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.0
+          ref: v2.1
 
       - name: Download artifact
         id: download
@@ -300,7 +301,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.0
+          ref: v2.1
 
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/rosdep
