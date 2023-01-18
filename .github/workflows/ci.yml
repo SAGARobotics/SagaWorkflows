@@ -87,7 +87,7 @@ jobs:
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
-          submodules: true
+          submodules: recursive
           path: repository
 
       - name: Conform
