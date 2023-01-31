@@ -5,8 +5,8 @@ on:
       runs-on:
         type: string
         description: |
-          Stringified list for choosing github runners. The default is using the 
-          self-hosted buildfarm, but for public repositories the public-hosted 
+          Stringified list for choosing github runners. The default is using the
+          self-hosted buildfarm, but for public repositories the public-hosted
           runners must be used (for example ubuntu-latest).
         default: '["self-hosted", "buildfarm"]'
         required: false
@@ -14,20 +14,20 @@ on:
         type: string
         description: |
           The release type that this workflow should run for. Valid options are
-          'internal', 'external' or 'public'. Beware that using the 'external' 
-          or 'public' option will make your program available to others than 
-          SagaRobotics. 
-          The workflow's dependencies will also be sourced based on this 
+          'internal', 'external' or 'public'. Beware that using the 'external'
+          or 'public' option will make your program available to others than
+          SagaRobotics.
+          The workflow's dependencies will also be sourced based on this
           parameter.
         default: internal
         required: false
       packages:
         type: string
         description: |
-          Stringified list of the packages that shall be used in the workflow. 
-          If not provided, the default behavior is to use all packages. 
-          N.B. If you include the default empty string in the list, all packages 
-          will be included in the workflow. 
+          Stringified list of the packages that shall be used in the workflow.
+          If not provided, the default behavior is to use all packages.
+          N.B. If you include the default empty string in the list, all packages
+          will be included in the workflow.
         default: '[]'
         required: false
       distribution:
@@ -49,11 +49,11 @@ on:
           Control input for releasing the repo.
         default: 'false'
         required: false
-    
+
     secrets:
       pat-token:
         description: |
-          Personal access token with at least read privileges for all 
+          Personal access token with at least read privileges for all
           repositories in the organization.
         required: true
       repo-user:
@@ -81,7 +81,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.6
+          ref: v2.7
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v3
         with:
@@ -106,7 +106,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
@@ -116,7 +116,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.6
+          ref: v2.7
 
       - name: Create package workspace
         id: catkin_workspace
@@ -126,7 +126,7 @@ jobs:
           pat-token: ${{ secrets.pat-token }}
           package: ${{ matrix.package }}
           catkinws-src: $CATKIN_WS_SRC
-      
+
       - name: Preform pre-release checks
         if: ${{ inputs.disable-checks != 'true' }}
         uses: ./.github/SagaActions/checks
@@ -142,7 +142,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
@@ -152,7 +152,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.6
+          ref: v2.7
 
       - name: Create package workspace
         id: catkin_workspace
@@ -190,8 +190,8 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.6
-      
+          ref: v2.7
+
       - name: Create package workspace
         id: catkin_workspace
         uses: ./.github/SagaActions/create_workspace
@@ -200,7 +200,7 @@ jobs:
           pat-token: ${{ secrets.pat-token }}
           package: ${{ matrix.package }}
           catkinws-src: $CATKIN_WS_SRC
-          
+
       - name: Build ${{ matrix.package }}
         id: build
         uses: ./.github/SagaActions/build
@@ -212,7 +212,7 @@ jobs:
           release-type: ${{ inputs.release-type }}
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
-      
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -258,7 +258,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.6
+          ref: v2.7
 
       - name: Download artifact
         id: download
@@ -301,7 +301,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.6
+          ref: v2.7
 
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/rosdep
