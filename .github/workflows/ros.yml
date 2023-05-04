@@ -2,7 +2,6 @@ on:
   workflow_call:
     
     inputs:
-
       runs-on:      
         type: string
         description: |
@@ -12,14 +11,12 @@ on:
           Example value: '["ubuntu-latest"]'
         default: '["self-hosted", "buildfarm"]'
         required: false
-
       release:
         type: boolean
         description: |
           Control whether or not to run the release jobs.
         default: false
         required: false
-
       release-type:
         type: string
         description: |
@@ -29,7 +26,6 @@ on:
           dependencies**. So, make sure the dependencies are available in the same release.
         default: internal
         required: false
-      
       packages:
         type: string
         description: |
@@ -39,7 +35,6 @@ on:
           Example value: '["my_ros_package", "another_ros_package"]'
         default: '[]'
         required: false
-
       build-with-autonomy:
         type: boolean
         default: true
@@ -48,7 +43,6 @@ on:
           Control whether or not to build the pacakge with the ThorvaldAutonomy repository.
           Building with the ThorvaldAutonomy repo will place any declared dependencies that
           can be found in it, into the buildspace with your package/packages.
-      
       distribution:
         type: string
         description: |
@@ -56,7 +50,6 @@ on:
           Supported distributions: 'melodic', 'noetic'
         default: 'noetic'
         required: false
-
       run-pre-release-checks:
         type: boolean
         description: |
@@ -66,7 +59,6 @@ on:
           Checks: 'git-tag-ros-version'
         default: false
         required: false
-      
       saga-action-ref:
         type: string
         description: |
@@ -74,22 +66,17 @@ on:
         default: 'main'
         required: false
 
-      
     secrets:
-
       pat-token:
         description: |
           Personal access token with read privileges for all repositories in the organization.
         required: true
-      
       repo-user:
         description: Username with read/write privileges to SagaRobotics' APT repository.
         required: true
-
       repo-pass:
         description: Password for the provided user to Saga Robotics' APT repository.
         required: true
-
 
 env:
   CATKIN_WS: catkin_ws
@@ -101,11 +88,9 @@ jobs:
   prepare-jobs:
     name: Create job parameters and prepare common workspace
     runs-on: ${{ fromJson(inputs.runs-on) }}
-
     outputs:
       matrix: ${{ steps.set-package-list.outputs.pacakge-list }}
       artifact: ${{ steps.base.outputs.artifact-tag }}
-      
     steps:
       # Check package list was set in input
       - name: Check package list
@@ -120,7 +105,6 @@ jobs:
             echo "package-list=${{ inputs.packages }}" >> $GITHUB_OUTPUT
           fi
         shell: bash
-
       # Checking out necessary repositories
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
         uses: actions/checkout@v3
@@ -129,7 +113,6 @@ jobs:
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
           ref: ${{ inputs.saga-action-ref }}
-
       - name: Temporary checkout ${{ github.event.repository.name }}
         if: ${{ steps.check-package-list.outputs.package-list != '' }}
         uses: actions/checkout@v3
@@ -138,14 +121,12 @@ jobs:
           token: ${{ secrets.pat-token }}
           submodules: recursive
           path: tmp_repository
-
       - name: List packages in the repository
         if: ${{ steps.check-package-list.outputs.package-list != '' }}
         id: list-packages
         uses: .github/SagaActions/list_packages
         with:
           workspace: ${{ github.workspace }}/tmp_repository
-
       - name: Create base workspace
         id: base
         uses: .github/SagaActions/create_workspace_artifact
@@ -154,7 +135,6 @@ jobs:
           pat-token: ${{ secrets.pat-token }}
           use-autonomy: ${{ inputs.build-with-autonomy }}
           workspace-path: $BASE_WORKSPACE
-
       - name: Set output list
         id: set-package-list
         run: |
