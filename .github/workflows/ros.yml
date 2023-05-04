@@ -90,7 +90,6 @@ jobs:
       artifact: ${{ steps.base.outputs.artifact-tag }}
 
     steps:
-
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
         uses: actions/checkout@v3
         with:
