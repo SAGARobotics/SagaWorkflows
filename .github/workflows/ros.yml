@@ -133,10 +133,10 @@ jobs:
         id: set-package-list
         run: |
           if [ "${{ inputs.packages }}" == "[]" ]; then
-            echo "Using generated package list from workspace: ${{ steps.list-packages.outputs.package-list }}"
+            echo "Using generated package list from workspace: ${{ steps.list-packages.outputs.package-list }}";
             echo "package-list=${{ steps.list-packages.outputs.package-list }}" >> GITHUB_OUTPUT
           else
-            echo "Using package list from input: ${{ inputs.packages }}"
+            echo "Using package list from input: ${{ inputs.packages }}";
             echo "package-list=${{ inputs.packages }}" >> GITHUB_OUTPUT
           fi
         shell: bash
