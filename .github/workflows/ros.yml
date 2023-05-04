@@ -113,6 +113,12 @@ jobs:
         uses: ./.github/SagaActions/ros/list_packages
         with:
           workspace: ${{ github.workspace }}/tmp_repository
+      
+      - name: '[DEBUG] show the output of the list-packages action'
+        if: ${{ inputs.packages == '[]' }}
+        run: |
+          echo "package-list=${{ steps.list-packages.outputs.package-list }}"
+        shell: bash
 
       - name: Create base workspace
         id: base
