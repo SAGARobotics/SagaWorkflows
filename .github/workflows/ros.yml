@@ -90,18 +90,6 @@ jobs:
       artifact: ${{ steps.base.outputs.artifact-tag }}
 
     steps:
-      - name: Check package list
-        id: check-package-list
-        run: |
-          if [ "${{ inputs.packages }}" == "[]" ]; then
-            echo "No package list provided. Running workflow for all packages in repository."
-            echo "package-list=''" >> $GITHUB_OUTPUT
-          else
-            echo "Package list provided. Running workflow for the following packages:"
-            echo ${{ inputs.packages }}
-            echo "package-list=${{ inputs.packages }}" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
 
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
         uses: actions/checkout@v3
@@ -112,7 +100,7 @@ jobs:
           ref: ${{ inputs.saga-action-ref }}
 
       - name: Temporary checkout ${{ github.event.repository.name }}
-        if: ${{ steps.check-package-list.outputs.package-list != '' }}
+        if: ${{ inputs.packages == '[]' }}
         uses: actions/checkout@v3
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
@@ -121,7 +109,7 @@ jobs:
           path: tmp_repository
 
       - name: List packages in the repository
-        if: ${{ steps.check-package-list.outputs.package-list == '' }}
+        if: ${{ inputs.packages == '[]' }}
         id: list-packages
         uses: ./.github/SagaActions/ros/list_packages
         with:
@@ -139,11 +127,11 @@ jobs:
       - name: Set output list
         id: set-package-list
         run: |
-          if [ ${{ steps.check-package-list.outputs.package-list }} == '' ]; then
-            echo "Using generated package list from workspace"
+          if [ "${{ inputs.packages }}" == "[]" ]; then
+            echo "Using generated package list from workspace: ${{ steps.list-packages.outputs.package-list }}"
             echo "package-list=${{ steps.list-packages.outputs.package-list }}" >> GITHUB_OUTPUT
           else
-            echo "Using package list from input"
+            echo "Using package list from input: ${{ inputs.packages }}"
             echo "package-list=${{ inputs.packages }}" >> GITHUB_OUTPUT
           fi
         shell: bash
