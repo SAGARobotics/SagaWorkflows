@@ -78,23 +78,38 @@ on:
 
 env:
   CATKIN_WS_SRC: catkin_ws/src
+  BASE_WORKSPACE: ${{ github.workspace }}/base_ws
 
 jobs:
   prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Create job parameters
+    name: Create job parameters and prepare common workspace
 
     outputs:
-      matrix: ${{ steps.workspace_dependencies.outputs.package-list }}
+      matrix: ${{ steps.set-package-list.outputs.pacakge-list }}
+      artifact: ${{ steps.base.outputs.artifact-tag }}
 
     steps:
-      - name: Checkout SagaActions
+      - name: Check package list
+        id: check-package-list
+        run: |
+          if [ -z "${{ inputs.packages }}" ]; then
+            echo "No package list provided. Running workflow for all packages in repository."
+            echo "package-list=''" >> $GITHUB_OUTPUT
+          else
+            echo "Package list provided. Running workflow for the following packages:"
+            echo ${{ inputs.packages }}
+            echo "package-list=${{ inputs.packages }}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
         uses: actions/checkout@v3
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.7
+          ref: ${{ inputs.saga-action-ref }}
+
       - name: Checkout ${{ github.event.repository.name }}
         uses: actions/checkout@v3
         with:
@@ -111,144 +126,3 @@ jobs:
         uses: ./.github/SagaActions/workspace_dependencies
         with:
           packages: ${{ inputs.packages }}
-
-  checks:
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    needs: prepare-jobs
-    name: Checks
-
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
-
-    steps:
-      - name: Checkout SagaActions
-        uses: actions/checkout@v3
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-          ref: v2.7
-
-      - name: Create package workspace
-        id: catkin_workspace
-        uses: ./.github/SagaActions/create_workspace
-        with:
-          repository: ${{ github.event.repository.name }}
-          pat-token: ${{ secrets.pat-token }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-
-      - name: Preform pre-release checks
-        uses: ./.github/SagaActions/checks
-        with:
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-          release-type: ${{ inputs.release-type }}
-
-  test:
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    needs: prepare-jobs
-    name: Integration tests
-
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
-
-    steps:
-      - name: Checkout SagaActions
-        uses: actions/checkout@v3
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-          ref: v2.7
-
-      - name: Create package workspace
-        id: catkin_workspace
-        uses: ./.github/SagaActions/create_workspace
-        with:
-          repository: ${{ github.event.repository.name }}
-          pat-token: ${{ secrets.pat-token }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-
-      - name: Run ROS tests
-        id: ros_tests
-        uses: ./.github/SagaActions/testing/ros_tests
-        with:
-          rosdistro: ${{ inputs.distribution }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-          release-type: ${{ inputs.release-type }}
-          repo-user: ${{ secrets.repo-user }}
-          repo-pass: ${{ secrets.repo-pass }}
-
-  build:
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    needs: [prepare-jobs, test, checks]
-    name: Build
-
-    strategy:
-      matrix:
-        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
-
-    steps:
-      - name: Checkout SagaActions
-        uses: actions/checkout@v3
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-          ref: v2.7
-
-      - name: Create package workspace
-        id: catkin_workspace
-        uses: ./.github/SagaActions/create_workspace
-        with:
-          repository: ${{ github.event.repository.name }}
-          pat-token: ${{ secrets.pat-token }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-
-      - name: Build ${{ matrix.package }}
-        id: build
-        uses: ./.github/SagaActions/build
-        with:
-          rosdistro: ${{ inputs.distribution }}
-          package: ${{ matrix.package }}
-          catkinws-src: $CATKIN_WS_SRC
-          build-order: ${{ steps.catkin_workspace.outputs.package-list }}
-          release-type: ${{ inputs.release-type }}
-          repo-user: ${{ secrets.repo-user }}
-          repo-pass: ${{ secrets.repo-pass }}
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
-          path: ${{ steps.build.outputs.package_path }}
-          if-no-files-found: error
-          retention-days: 1
-
-  build-status:
-    if: ${{ always() }}
-    needs: [build]
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Build Status
-
-    steps:
-      - name: Status for matrix build jobs
-        run: |
-          failed=$(curl -X GET -s -u "sagarobotics-cicd:${{ secrets.pat-token }}" \
-                    https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs | \
-                    jq -c 'any (.jobs[]; .conclusion == "failure")')
-          if [[ "$failed" == "true" ]];
-          then
-            exit 1;
-          else
-            exit 0
-          fi
-        shell: bash
