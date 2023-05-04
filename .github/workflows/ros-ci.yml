@@ -97,7 +97,6 @@ env:
 
 
 jobs:
-
   prepare-jobs:
     name: Create job parameters and prepare common workspace
     runs-on: ${{ fromJson(inputs.runs-on) }}
