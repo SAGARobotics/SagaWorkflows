@@ -124,12 +124,5 @@ jobs:
         uses: .github/SagaActions/list_packages
         with:
           workspace: ${{ github.workspace }}/tmp_repository
-      - name: Create base workspace
-        id: base
-        uses: .github/SagaActions/create_workspace_artifact
-        with:
-          repository: ${{ github.event.repository.name }}
-          pat-token: ${{ secrets.pat-token }}
-          use-autonomy: ${{ inputs.build-with-autonomy }}
-          workspace-path: $BASE_WORKSPACE
+
 
