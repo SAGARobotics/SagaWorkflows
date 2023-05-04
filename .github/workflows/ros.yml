@@ -117,12 +117,3 @@ jobs:
           token: ${{ secrets.pat-token }}
           submodules: recursive
           path: tmp_repository
-
-      - name: List packages in the repository
-        if: ${{ steps.check-package-list.outputs.package-list != '' }}
-        id: list-packages
-        uses: .github/SagaActions/list_packages
-        with:
-          workspace: ${{ github.workspace }}/tmp_repository
-
-
