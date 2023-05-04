@@ -117,3 +117,30 @@ jobs:
           token: ${{ secrets.pat-token }}
           submodules: recursive
           path: tmp_repository
+      - name: List packages in the repository
+        if: ${{ steps.check-package-list.outputs.package-list != '' }}
+        id: list-packages
+        uses: ./.github/SagaActions/list_packages
+        with:
+          workspace: ${{ github.workspace }}/tmp_repository
+
+      - name: Create base workspace
+        id: base
+        uses: ./.github/SagaActions/create_workspace_artifact
+        with:
+          repository: ${{ github.event.repository.name }}
+          pat-token: ${{ secrets.pat-token }}
+          use-autonomy: ${{ inputs.build-with-autonomy }}
+          workspace-path: $BASE_WORKSPACE
+
+      - name: Set output list
+        id: set-package-list
+        run: |
+          if [ ${{ steps.check-package-list.outputs.package-list }} != '' ]; then
+            echo "Using generated package list from workspace"
+            echo "package-list=${{ steps.list-packages.outputs.package-list }}" >> GITHUB_OUTPUT
+          else
+            echo "Using package list from input"
+            echo "package-list=${{ inputs.packages }}" >> GITHUB_OUTPUT
+          fi
+        shell: bash
