@@ -134,3 +134,29 @@ jobs:
             echo "package-list=${{ inputs.packages }}" >> GITHUB_OUTPUT
           fi
         shell: bash
+
+  test:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Test packages
+    needs: prepare-jobs
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      - name: Create isolated workspace
+        id: create-isolated-workspace
+        uses: ./.github/SagaActions/ros/create_isolated_workspace
+        with:
+          package-name: ${{ matrix.package }}
+          workspace-path: isolated_ws
+          artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
