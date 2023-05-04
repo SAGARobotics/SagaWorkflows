@@ -93,7 +93,7 @@ jobs:
       - name: Check package list
         id: check-package-list
         run: |
-          if [ -z ${{ inputs.packages }} ]; then
+          if [ "${{ inputs.packages }}" == "[]" ]; then
             echo "No package list provided. Running workflow for all packages in repository."
             echo "package-list=''" >> $GITHUB_OUTPUT
           else
