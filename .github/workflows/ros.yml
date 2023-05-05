@@ -141,7 +141,6 @@ jobs:
             PACKAGES=${{ inputs.packages }}
             echo "Using package list from input"
           fi
-          PACKAGES=$(echo $PACKAGES | sed 's/\([^\\]\)"/\1\\"/g')
           echo "prepared-jobs=$PACKAGES" >> $GITHUB_OUTPUT
           echo "Resulting package list: $PACKAGES"
         shell: bash
