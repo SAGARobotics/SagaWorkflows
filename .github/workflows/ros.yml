@@ -141,7 +141,7 @@ jobs:
             PACKAGES=${{ inputs.packages }}
             echo "Using package list from input"
           fi
-          echo "prepared-jobs=\"$PACKAGES\"" >> $GITHUB_OUTPUT
+          echo "prepared-jobs='$PACKAGES'" >> $GITHUB_OUTPUT
           echo "Resulting package list: $PACKAGES"
         shell: bash
 
