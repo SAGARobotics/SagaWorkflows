@@ -159,7 +159,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+      matrix: ${{ needs.prepare-jobs.outputs.matrix }}
 
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
