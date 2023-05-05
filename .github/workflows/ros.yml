@@ -78,7 +78,7 @@ on:
 
 env:
   CATKIN_WS_SRC: catkin_ws/src
-  BASE_WORKSPACE: ${{ github.workspace }}/base_ws
+  BASE_WORKSPACE: base_ws
 
 jobs:
   prepare-jobs:
@@ -121,7 +121,7 @@ jobs:
           repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
           use-autonomy: ${{ inputs.build-with-autonomy }}
-          workspace-path: base_ws
+          workspace-path: $BASE_WORKSPACE
 
       - name: Set output packages
         id: set-package-list
@@ -163,3 +163,4 @@ jobs:
           package-name: ${{ matrix.package }}
           destination-workspace: isolated_ws
           artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
+          base-workspace: $BASE_WORKSPACE
