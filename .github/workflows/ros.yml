@@ -134,12 +134,14 @@ jobs:
         run: |
           echo "test=\"hello world!\"" >> $GITHUB_OUTPUT
           if [ "${{ inputs.packages }}" == "[]" ]; then
-            echo "packages=\"${{ steps.list-packages.outputs.package-list }}\"" >> GITHUB_OUTPUT;
-            echo "Using generated package list from workspace: ${{ steps.list-packages.outputs.package-list }}";
+            PACKAGES=${{ steps.list-packages.outputs.package-list }};
+            echo "Using generated package list from workspace";
           else
-            echo "packages=${{ inputs.packages }}" >> GITHUB_OUTPUT;
-            echo "Using package list from input: ${{ inputs.packages }}";
+            PACKAGES=${{ inputs.packages }};
+            echo "Using package list from input";
           fi
+          echo "packages=$PACKAGES" >> GITHUB_OUTPUT;
+          echo "Resulting package list: $PACKAGES";
         shell: bash
 
       - name: '[DEBUG] show the output of the set-package-list action'
