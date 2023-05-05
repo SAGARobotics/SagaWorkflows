@@ -86,7 +86,7 @@ jobs:
     name: Create job parameters and prepare common workspace
 
     outputs:
-      matrix: ${{ steps.set-package-list.outputs.pacakges }}
+      matrix: ${{ steps.set-package-list.outputs.prepared-jobs }}
       artifact: ${{ steps.base.outputs.artifact-tag }}
 
     steps:
@@ -141,13 +141,13 @@ jobs:
             PACKAGES=${{ inputs.packages }};
             echo "Using package list from input";
           fi
-          echo "packages=$PACKAGES" >> GITHUB_OUTPUT;
+          echo "prepared-jobs=$PACKAGES" >> GITHUB_OUTPUT;
           echo "Resulting package list: $PACKAGES";
         shell: bash
 
       - name: '[DEBUG] show the output of the set-package-list action'
         run: |
-          echo "packages=${{ steps.set-package-list.outputs.packages }}"
+          echo "prepared-jobs=${{ steps.set-package-list.outputs.prepared-jobs }}"
           echo "test=${{ steps.set-package-list.outputs.test }}"
         shell: bash
 
