@@ -78,6 +78,8 @@ on:
 
 env:
   CATKIN_WS_SRC: catkin_ws/src
+  # TODO: Problems with env var not being evaluated if used as input to action when using that 
+  # input as an input to a docker-action
   BASE_WORKSPACE: base_ws
 
 jobs:
@@ -121,7 +123,7 @@ jobs:
           repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
           use-autonomy: ${{ inputs.build-with-autonomy }}
-          workspace-path: $BASE_WORKSPACE
+          workspace-path: base_ws
 
       - name: Set output packages
         id: set-package-list
@@ -163,4 +165,4 @@ jobs:
           package-name: ${{ matrix.package }}
           destination-workspace: isolated_ws
           artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
-          base-workspace: $BASE_WORKSPACE
+          base-workspace: base_ws
