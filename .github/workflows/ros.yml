@@ -166,3 +166,12 @@ jobs:
           destination-workspace: isolated_ws
           artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
           base-workspace: base_ws
+      
+      - name: Run tests
+        id: run-tests
+        uses: ./.github/SagaActions/ros/test
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          workspace: isolated_ws
+          
