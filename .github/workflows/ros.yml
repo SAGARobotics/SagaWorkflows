@@ -121,7 +121,7 @@ jobs:
           repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
           use-autonomy: ${{ inputs.build-with-autonomy }}
-          workspace-path: $BASE_WORKSPACE
+          workspace-path: "$BASE_WORKSPACE"
 
       - name: Set output packages
         id: set-package-list
