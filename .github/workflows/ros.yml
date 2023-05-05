@@ -134,7 +134,7 @@ jobs:
         run: |
           echo "test=\"hello world!\"" >> $GITHUB_OUTPUT
           if [ "${{ inputs.packages }}" == "[]" ]; then
-            PACKAGES=${{ steps.list-packages.outputs.package-list }};
+            PACKAGES=\"${{ steps.list-packages.outputs.package-list }}\";
             echo "Using generated package list from workspace";
           else
             PACKAGES=${{ inputs.packages }};
