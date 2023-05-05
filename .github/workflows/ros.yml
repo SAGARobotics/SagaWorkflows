@@ -142,7 +142,7 @@ jobs:
             echo "Using package list from input"
           fi
           PACKAGES=$(echo $PACKAGES | sed 's/\([^\\]\)"/\1\\"/g')
-          echo "prepared-jobs='$PACKAGES'" >> $GITHUB_OUTPUT
+          echo "prepared-jobs=$PACKAGES" >> $GITHUB_OUTPUT
           echo "Resulting package list: $PACKAGES"
         shell: bash
 
@@ -160,7 +160,8 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+      matrix: 
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
