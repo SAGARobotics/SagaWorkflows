@@ -132,11 +132,13 @@ jobs:
       - name: Set output packages
         id: set-package-list
         run: |
-          echo "test=\"hello world!\"" >> $GITHUB_OUTPUT
+          TEST='["hello", "world", "!"]'
+          echo "test=$TEST" >> $GITHUB_OUTPUT
           if [ "${{ inputs.packages }}" == "[]" ]; then
             PACKAGES='${{ steps.list-packages.outputs.package-list }}';
             echo "Using generated package list from workspace";
           else
+            PACKAGES=${{ inputs.packages }};
             echo "Using package list from input";
           fi
           echo "packages=$PACKAGES" >> GITHUB_OUTPUT;
