@@ -46,7 +46,7 @@ on:
           Control whether or not to build the pacakge with the ThorvaldAutonomy repository.
           Building with the ThorvaldAutonomy repo will place any declared dependencies that
           can be found in it, into the buildspace with your package/packages.
-        default: false
+        default: true
         required: false
 
       saga-action-ref:
