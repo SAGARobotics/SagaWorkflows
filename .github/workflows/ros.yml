@@ -161,5 +161,5 @@ jobs:
         uses: ./.github/SagaActions/ros/create_isolated_workspace
         with:
           package-name: ${{ matrix.package }}
-          workspace-path: isolated_ws
+          destination-workspace: isolated_ws
           artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
