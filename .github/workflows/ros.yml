@@ -149,6 +149,7 @@ jobs:
         run: |
           echo "prepared-jobs=${{ steps.set-package-list.outputs.prepared-jobs }}"
           echo "test=${{ steps.set-package-list.outputs.test }}"
+          echo "artifact-tag=${{ steps.base.outputs.artifact-tag }}"
         shell: bash
 
   test:
