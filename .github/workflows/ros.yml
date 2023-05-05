@@ -46,7 +46,7 @@ on:
           Control whether or not to build the pacakge with the ThorvaldAutonomy repository.
           Building with the ThorvaldAutonomy repo will place any declared dependencies that
           can be found in it, into the buildspace with your package/packages.
-        default: true
+        default: false
         required: false
 
       saga-action-ref:
@@ -132,6 +132,7 @@ jobs:
       - name: Set output packages
         id: set-package-list
         run: |
+          echo "test=hello world!" >> $GITHUB_OUTPUT
           if [ "${{ inputs.packages }}" == "[]" ]; then
             echo "packages=${{ steps.list-packages.outputs.package-list }}" >> GITHUB_OUTPUT;
             echo "Using generated package list from workspace: ${{ steps.list-packages.outputs.package-list }}";
@@ -144,6 +145,7 @@ jobs:
       - name: '[DEBUG] show the output of the set-package-list action'
         run: |
           echo "packages=${{ steps.set-package-list.outputs.packages }}"
+          echo "test=${{ steps.set-package-list.outputs.test }}"
         shell: bash
 
   test:
