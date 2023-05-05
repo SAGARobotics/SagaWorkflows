@@ -113,12 +113,6 @@ jobs:
         uses: ./.github/SagaActions/ros/list_packages
         with:
           workspace: ${{ github.workspace }}/tmp_repository
-      
-      - name: '[DEBUG] show the output of the list-packages action'
-        if: ${{ inputs.packages == '[]' }}
-        run: |
-          echo "package-list=${{ steps.list-packages.outputs.package-list }}"
-        shell: bash
 
       - name: Create base workspace
         id: base
@@ -132,8 +126,6 @@ jobs:
       - name: Set output packages
         id: set-package-list
         run: |
-          TEST='["hello", "world", "!"]'
-          echo "test=$TEST" >> $GITHUB_OUTPUT
           if [ "${{ inputs.packages }}" == "[]" ]; then
             PACKAGES='${{ steps.list-packages.outputs.package-list }}'
             echo "Using generated package list from workspace"
@@ -142,19 +134,12 @@ jobs:
             echo "Using package list from input"
           fi
           echo "prepared-jobs=$PACKAGES" >> $GITHUB_OUTPUT
-          echo "Resulting package list: $PACKAGES"
-        shell: bash
-
-      - name: '[DEBUG] show the output of the set-package-list action'
-        run: |
-          echo "prepared-jobs=${{ steps.set-package-list.outputs.prepared-jobs }}"
-          echo "test=${{ steps.set-package-list.outputs.test }}"
-          echo "artifact-tag=${{ steps.base.outputs.artifact-tag }}"
+          echo "\033[94mResulting package list: $PACKAGES\033[0m"
         shell: bash
 
   test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Test packages
+    name: Run tests
     needs: prepare-jobs
 
     strategy:
