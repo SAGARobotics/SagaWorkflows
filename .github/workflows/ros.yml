@@ -141,6 +141,11 @@ jobs:
           fi
         shell: bash
 
+      - name: '[DEBUG] show the output of the set-package-list action'
+        run: |
+          echo "package-list=${{ steps.set-package-list.outputs.package-list }}"
+        shell: bash
+
   test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Test packages
