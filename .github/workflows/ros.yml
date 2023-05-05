@@ -174,4 +174,6 @@ jobs:
           rosdistro: ${{ inputs.distribution }}
           package: ${{ matrix.package }}
           workspace: isolated_ws
-          
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+
