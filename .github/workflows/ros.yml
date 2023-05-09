@@ -83,6 +83,34 @@ env:
   BASE_WORKSPACE: base_ws
 
 jobs:
+  ros-version-check:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Check ROS versions
+    if: ${{ inputs.release == 'true' }}
+
+    steps:
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+          path: repository
+          
+      - name: Check versions
+        uses: ./.github/SagaActions/ros/version_check
+        with:
+          workspace: repository
+          release-type: ${{ inputs.release-type }}
+
+
   prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Create job parameters and prepare common workspace
@@ -147,7 +175,7 @@ jobs:
 
   test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Run tests
+    name: Test
     needs: prepare-jobs
 
     strategy:
@@ -185,7 +213,7 @@ jobs:
 
   build:
     runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Build package
+    name: Build
     needs: prepare-jobs
 
     strategy:
