@@ -86,7 +86,7 @@ jobs:
   ros-version-check:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Check ROS versions
-    if: ${{ inputs.release == 'true' }}
+    # if: ${{ inputs.release == 'true' }}
 
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
@@ -103,7 +103,7 @@ jobs:
           repository: ${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
           path: repository
-          
+
       - name: Check versions
         uses: ./.github/SagaActions/ros/version_check
         with:
