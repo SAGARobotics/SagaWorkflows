@@ -100,7 +100,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          repository: ${{ github.event.repository.name }}
+          repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
           path: repository
 
