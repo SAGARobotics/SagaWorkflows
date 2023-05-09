@@ -104,7 +104,7 @@ jobs:
           token: ${{ secrets.pat-token }}
           path: repository
           fetch-depth: 0
-          recursive: true
+          submodules: recursive
 
       - name: Check versions
         uses: ./.github/SagaActions/ros/version_check
