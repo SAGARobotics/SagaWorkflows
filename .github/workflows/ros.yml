@@ -224,7 +224,7 @@ jobs:
         with:
           rosdistro: ${{ inputs.distribution }}
           package: ${{ matrix.package }}
-          build-order: ${{ steps.build-order.outputs.dependency-list }}
+          build-order: ${{ steps.build-order.outputs.package-list }}
           workspace: isolated_ws
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
