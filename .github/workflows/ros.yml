@@ -92,6 +92,12 @@ jobs:
       artifact: ${{ steps.base.outputs.artifact-tag }}
 
     steps:
+      - name: '[DEBUG] Check output param'
+        run: |
+          echo "github output is:"
+          echo "$GITHUB_OUTPUT"
+        shell: bash
+
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
         uses: actions/checkout@v3
         with:
@@ -177,3 +183,40 @@ jobs:
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
 
+  # build:
+  #   runs-on: ${{ fromJson(inputs.runs-on) }}
+  #   name: Build package
+  #   needs: prepare-jobs
+
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+    
+  #   steps:
+  #     - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+  #       uses: actions/checkout@v3
+  #       with:
+  #         repository: SAGARobotics/SagaActions
+  #         token: ${{ secrets.pat-token }}
+  #         path: .github/SagaActions
+  #         ref: ${{ inputs.saga-action-ref }}
+
+  #     - name: Create isolated workspace
+  #       id: create-isolated-workspace
+  #       uses: ./.github/SagaActions/ros/create_isolated_workspace
+  #       with:
+  #         package-name: ${{ matrix.package }}
+  #         destination-workspace: isolated_ws
+  #         artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
+  #         base-workspace: base_ws
+
+  #     - name: Build package
+  #       id: build-package
+  #       uses: ./.github/SagaActions/ros/build
+  #       with:
+  #         rosdistro: ${{ inputs.distribution }}
+  #         package: ${{ matrix.package }}
+  #         workspace: isolated_ws
+  #         repo-user: ${{ secrets.repo-user }}
+  #         repo-pass: ${{ secrets.repo-pass }}
