@@ -216,7 +216,7 @@ jobs:
         uses: ./.github/SagaActions/ros/list_dependencies
         with:
           workspace-path: isolated_ws
-          package: ${{ matrix.package }}
+          package-name: ${{ matrix.package }}
 
       - name: Build package
         id: build-package
