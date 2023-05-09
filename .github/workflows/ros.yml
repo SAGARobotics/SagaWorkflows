@@ -211,12 +211,21 @@ jobs:
           artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
           base-workspace: base_ws
 
+      - name: Determine build order
+        id: build-order
+        uses: ./.github/SagaActions/ros/list_dependencies
+        with:
+          workspace-path: isolated_ws
+          package: ${{ matrix.package }}
+
       - name: Build package
         id: build-package
-        uses: ./.github/SagaActions/ros/build
+        uses: ./.github/SagaActions/ros/compile
         with:
           rosdistro: ${{ inputs.distribution }}
           package: ${{ matrix.package }}
+          build-order: ${{ steps.build-order.outputs.dependency-list }}
           workspace: isolated_ws
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
+          release-type: ${{ inputs.release-type }}
