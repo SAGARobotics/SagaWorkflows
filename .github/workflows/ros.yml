@@ -259,3 +259,27 @@ jobs:
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
           release-type: ${{ inputs.release-type }}
+
+  status:
+    if: ${{ always() }}
+    needs: [build, test]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Status
+
+    steps:
+      - name: Status for matrix build/test jobs
+        run: |
+          failed=$(curl -X GET -s -u "sagarobotics-cicd:${{ secrets.pat-token }}" \
+                   https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs | \
+                   jq -c 'any (.jobs[]; .conclusion == "failure")')
+          if [[ "$failed" == "true" ]]; then
+            echo "::error:: Build/test status failed!"
+            exit 1
+          else
+            exit 0
+          fi
+        shell: bash
+
+# TODO: 
+# release job
+# update ROS dependency repository job
