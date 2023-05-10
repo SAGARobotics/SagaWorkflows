@@ -86,7 +86,7 @@ jobs:
   ros-version-check:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Check ROS versions
-    # if: ${{ inputs.release == 'true' }}
+    if: ${{ inputs.release == 'true' }}
 
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
@@ -279,6 +279,18 @@ jobs:
             exit 0
           fi
         shell: bash
+  
+  release:
+    if: ${{ inputs.release == 'true' }}
+    needs: [status, ros-version-check, prepare-jobs]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Release
+
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+    
+    
 
 # TODO: 
 # release job
