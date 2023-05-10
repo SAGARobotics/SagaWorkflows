@@ -84,9 +84,9 @@ env:
 
 jobs:
   ros-version-check:
+    if: ${{ inputs.release == 'true' }}
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Check ROS versions
-    if: ${{ inputs.release == 'true' }}
 
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
@@ -289,6 +289,11 @@ jobs:
     strategy:
       matrix:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: DEBUG
+        run: echo "Doing release for ${{ matrix.package }}!"
+        shell: bash
     
     
 
