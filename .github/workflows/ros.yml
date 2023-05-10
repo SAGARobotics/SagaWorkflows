@@ -83,36 +83,6 @@ env:
   BASE_WORKSPACE: base_ws
 
 jobs:
-  ros-version-check:
-    if: ${{ inputs.release == 'true' }}
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Check ROS versions
-
-    steps:
-      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
-        uses: actions/checkout@v3
-        with:
-          repository: SAGARobotics/SagaActions
-          token: ${{ secrets.pat-token }}
-          path: .github/SagaActions
-          ref: ${{ inputs.saga-action-ref }}
-
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          repository: SAGARobotics/${{ github.event.repository.name }}
-          token: ${{ secrets.pat-token }}
-          path: repository
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Check versions
-        uses: ./.github/SagaActions/ros/version_check
-        with:
-          workspace: repository
-          release-type: ${{ inputs.release-type }}
-
-
   prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Create job parameters and prepare common workspace
@@ -279,7 +249,36 @@ jobs:
             exit 0
           fi
         shell: bash
-  
+
+  ros-version-check:
+    if: ${{ inputs.release == 'true' }}
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Check ROS versions
+
+    steps:
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+          path: repository
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Check versions
+        uses: ./.github/SagaActions/ros/version_check
+        with:
+          workspace: repository
+          release-type: ${{ inputs.release-type }}
+
   release:
     if: ${{ inputs.release == 'true' }}
     needs: [status, ros-version-check, prepare-jobs]
