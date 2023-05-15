@@ -230,20 +230,9 @@ jobs:
           repo-pass: ${{ secrets.repo-pass }}
           release-type: ${{ inputs.release-type }}
   
-  autonomy:
-    if: ${{ inputs.build-with-autonomy == 'true' }}
-    runs-on: ${{ fromJson(inputs.runs-on) }}
-    name: Build ThorvaldAutonomy
-    needs: [build, test]
-
-    steps:
-      - name: Build Thorvald Autonomy Image
-        run: echo "TODO"
-        shell: bash
-  
   status:
     if: ${{ always() }}
-    needs: [build, test, autonomy]
+    needs: [build, test]
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Status
 
