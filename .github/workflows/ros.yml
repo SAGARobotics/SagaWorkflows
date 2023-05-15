@@ -290,9 +290,42 @@ jobs:
         package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
 
     steps:
-      - name: Placehoder (TODO)
-        run: echo "Doing release for ${{ matrix.package }}!"
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+      
+      - name: Download artifact
+        id: download-artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ github.workspace }}
+      
+      - name: Find debian filename
+        id: find-deb-filename
+        run: |
+          echo "::group::\033[32mArtifacts\033[0m"
+          ls ${{ steps.download-artifact.outputs.download-path }}
+          echo "::endgroup::"
+          DEBFILE=$(ls ${{ steps.download-artifact.outputs.download-path }} | grep -e "\.deb$")
+          echo "debfile=$DEBFILE" >> $GITHUB_OUTPUT
+          OS_VERSION=$(echo $DEBFILE | sed -rn "s/.*_[0-9]+\.[0-9]+\.[0-9]+-[0-9]+([a-z]+)\..*/\1/p")
+          echo "os-version=$OS_VERSION" >> $GITHUB_OUTPUT
         shell: bash
+      
+      - name: Release
+        uses: ./github/SagaActions/ros/release
+        with:
+          debian-file: ${{ steps.find-deb-filename.outputs.debfile }}
+          package-location: ${{ steps.download-artifact.outputs.download-path }}
+          distribution: ${{ steps.find-deb-filename.outputs.os-version }}
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
     
   update-rosdep:
     if: ${{ inputs.release == 'true' }}
@@ -301,24 +334,21 @@ jobs:
     name: Update ROS dependency file
 
     steps:
-      - name: Placeholder (TODO)
-        run: echo "Placeholder"
-        shell: bash
-      # - name: Checkout SagaActions
-      #   uses: actions/checkout@v3
-      #   with:
-      #     repository: SAGARobotics/SagaActions
-      #     token: ${{ secrets.pat-token }}
-      #     path: .github/SagaActions
-      #     ref: v2.7
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: v2.7
 
-      # - name: Update saga-rosdep
-      #   uses: ./.github/SagaActions/ros/rosdep
-      #   with:
-      #     ros-package-list: ${{ needs.prepare-jobs.outputs.matrix }}
-      #     ros-distribution: ${{ inputs.distribution }}
-      #     release-type: ${{ inputs.release-type }}
-      #     repo-init: ${{ github.event.repository.name }}
-      #     actor-init: ${{ github.actor }}
-      #     workflow-init: ${{ github.workflow }}
-      #     repo-token: ${{ secrets.pat-token }}
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/ros/rosdep
+        with:
+          ros-package-list: ${{ needs.prepare-jobs.outputs.matrix }}
+          ros-distribution: ${{ inputs.distribution }}
+          release-type: ${{ inputs.release-type }}
+          repo-init: ${{ github.event.repository.name }}
+          actor-init: ${{ github.actor }}
+          workflow-init: ${{ github.workflow }}
+          repo-token: ${{ secrets.pat-token }}
