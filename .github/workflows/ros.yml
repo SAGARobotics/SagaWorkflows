@@ -229,7 +229,7 @@ jobs:
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
           release-type: ${{ inputs.release-type }}
-
+  
   autonomy:
     if: ${{ inputs.build-with-autonomy == 'true' }}
     runs-on: ${{ fromJson(inputs.runs-on) }}
@@ -243,7 +243,7 @@ jobs:
   
   status:
     if: ${{ always() }}
-    needs: [build, test]
+    needs: [build, test, autonomy]
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Status
 
