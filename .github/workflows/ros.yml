@@ -218,7 +218,7 @@ jobs:
           workspace-path: isolated_ws
           package-name: ${{ matrix.package }}
 
-      - name: Build package
+      - name: Build ${{ matrix.package }}
         id: build-package
         uses: ./.github/SagaActions/ros/compile
         with:
@@ -229,7 +229,16 @@ jobs:
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
           release-type: ${{ inputs.release-type }}
-  
+      
+      - name: Upload artifact
+        if: ${{ inputs.release }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ steps.build-package.outputs.artifact-path }}
+          if-no-files-found: error
+          retention-days: 1
+
   status:
     if: ${{ always() }}
     needs: [build, test]
