@@ -235,7 +235,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
-          path: ${{ steps.build-package.outputs.artifact-path }}
+          path: ${{ steps.build-package.outputs.package_path }}
           if-no-files-found: error
           retention-days: 1
 
