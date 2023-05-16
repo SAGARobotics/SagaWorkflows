@@ -349,7 +349,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: v2.7
+          ref: ${{ inputs.saga-action-ref }}
 
       - name: Update saga-rosdep
         uses: ./.github/SagaActions/ros/rosdep
