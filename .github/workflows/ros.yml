@@ -1,8 +1,8 @@
 on:
   workflow_call:
-    
+
     inputs:
-      runs-on:      
+      runs-on:
         type: string
         description: |
           Stringified list for choosing GitHub runners. The default is using the self-hosted 
@@ -11,12 +11,7 @@ on:
           Example value: '["ubuntu-latest"]'
         default: '["self-hosted", "buildfarm"]'
         required: false
-      release:
-        type: boolean
-        description: |
-          Control whether or not to run the release jobs.
-        default: false
-        required: false
+
       release-type:
         type: string
         description: |
@@ -26,6 +21,7 @@ on:
           dependencies**. So, make sure the dependencies are available in the same release.
         default: internal
         required: false
+
       packages:
         type: string
         description: |
@@ -35,30 +31,24 @@ on:
           Example value: '["my_ros_package", "another_ros_package"]'
         default: '[]'
         required: false
+  
+      distribution:
+        type: string
+        description: |
+          The ROS distribution which the workflow will use for building/testing
+          the package(s).
+        default: 'noetic'
+        required: false
+
       build-with-autonomy:
         type: boolean
-        default: true
-        required: false
         description: |
           Control whether or not to build the pacakge with the ThorvaldAutonomy repository.
           Building with the ThorvaldAutonomy repo will place any declared dependencies that
           can be found in it, into the buildspace with your package/packages.
-      distribution:
-        type: string
-        description: |
-          The ROS distribution the workflow will run for. 
-          Supported distributions: 'melodic', 'noetic'
-        default: 'noetic'
-        required: false
-      run-pre-release-checks:
-        type: boolean
-        description: |
-          Control variable for preforming red tape checks. These checks should be kept to a 
-          minimum. The checks here should catch easy-to-do mistakes that have to be in place
-          before a release, so the build doesn't run, and then we catch the mistake. 
-          Checks: 'git-tag-ros-version'
         default: false
         required: false
+
       saga-action-ref:
         type: string
         description: |
@@ -66,46 +56,42 @@ on:
         default: 'main'
         required: false
 
+      release:
+        type: boolean
+        description: |
+          Control input for releasing the repo.
+        default: false
+        required: false
+
     secrets:
       pat-token:
         description: |
-          Personal access token with read privileges for all repositories in the organization.
+          Personal access token with at least read privileges for all
+          repositories in the organization.
         required: true
       repo-user:
-        description: Username with read/write privileges to SagaRobotics' APT repository.
+        description: Username with read/write privileges to Saga's repository.
         required: true
       repo-pass:
-        description: Password for the provided user to Saga Robotics' APT repository.
+        description: Password for the provided user.
         required: true
 
-env:
-  CATKIN_WS: catkin_ws
-  BASE_WORKSPACE: ${{ github.workspace }}/base_ws
-
-
 jobs:
-
   prepare-jobs:
-    name: Create job parameters and prepare common workspace
     runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Create job parameters and prepare common workspace
+
     outputs:
-      matrix: ${{ steps.set-package-list.outputs.pacakge-list }}
+      matrix: ${{ steps.set-package-list.outputs.prepared-jobs }}
       artifact: ${{ steps.base.outputs.artifact-tag }}
+
     steps:
-      # Check package list was set in input
-      - name: Check package list
-        id: check-package-list
+      - name: 'Check output param'
         run: |
-          if [ -z "${{ inputs.packages }}" ]; then
-            echo "No package list provided. Running workflow for all packages in repository."
-            echo "package-list=''" >> $GITHUB_OUTPUT
-          else
-            echo "Package list provided. Running workflow for the following packages:"
-            echo ${{ inputs.packages }}
-            echo "package-list=${{ inputs.packages }}" >> $GITHUB_OUTPUT
-          fi
+          echo "github output is:"
+          echo "$GITHUB_OUTPUT"
         shell: bash
-      # Checking out necessary repositories
+
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
         uses: actions/checkout@v3
         with:
@@ -113,48 +99,259 @@ jobs:
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
           ref: ${{ inputs.saga-action-ref }}
+
       - name: Temporary checkout ${{ github.event.repository.name }}
-        if: ${{ steps.check-package-list.outputs.package-list != '' }}
+        if: ${{ inputs.packages == '[]' }}
         uses: actions/checkout@v3
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
           submodules: recursive
           path: tmp_repository
+
       - name: List packages in the repository
-        if: ${{ steps.check-package-list.outputs.package-list != '' }}
+        if: ${{ inputs.packages == '[]' }}
         id: list-packages
-        uses: .github/SagaActions/list_packages
+        uses: ./.github/SagaActions/ros/list_packages
         with:
           workspace: ${{ github.workspace }}/tmp_repository
+
       - name: Create base workspace
         id: base
-        uses: .github/SagaActions/create_workspace_artifact
+        uses: ./.github/SagaActions/ros/create_workspace_artifact
         with:
           repository: ${{ github.event.repository.name }}
           pat-token: ${{ secrets.pat-token }}
           use-autonomy: ${{ inputs.build-with-autonomy }}
-          workspace-path: $BASE_WORKSPACE
-      - name: Set output list
+          workspace-path: base_ws
+
+      - name: Set output packages
         id: set-package-list
         run: |
-          if [ ${{ steps.check-package-list.outputs.package-list }} != '' ]; then
+          if [ "${{ inputs.packages }}" == "[]" ]; then
+            PACKAGES='${{ steps.list-packages.outputs.package-list }}'
             echo "Using generated package list from workspace"
-            echo "package-list=${{ steps.list-packages.outputs.package-list }}" >> GITHUB_OUTPUT
           else
+            PACKAGES=${{ inputs.packages }}
             echo "Using package list from input"
-            echo "package-list=${{ inputs.packages }}" >> GITHUB_OUTPUT
+          fi
+          echo "prepared-jobs=$PACKAGES" >> $GITHUB_OUTPUT
+          echo "\033[94mResulting package list: $PACKAGES\033[0m"
+        shell: bash
+
+  test:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Test
+    needs: prepare-jobs
+
+    strategy:
+      fail-fast: false
+      matrix: 
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      - name: Create isolated workspace
+        id: create-isolated-workspace
+        uses: ./.github/SagaActions/ros/create_isolated_workspace
+        with:
+          package-name: ${{ matrix.package }}
+          destination-workspace: isolated_ws
+          artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
+          base-workspace: base_ws
+      
+      - name: Run tests
+        id: run-tests
+        uses: ./.github/SagaActions/ros/test
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          workspace: isolated_ws
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+
+  build:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Build
+    needs: prepare-jobs
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+    
+    steps:
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      - name: Create isolated workspace
+        id: create-isolated-workspace
+        uses: ./.github/SagaActions/ros/create_isolated_workspace
+        with:
+          package-name: ${{ matrix.package }}
+          destination-workspace: isolated_ws
+          artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
+          base-workspace: base_ws
+
+      - name: Determine build order
+        id: build-order
+        uses: ./.github/SagaActions/ros/list_dependencies
+        with:
+          workspace-path: isolated_ws
+          package-name: ${{ matrix.package }}
+
+      - name: Build ${{ matrix.package }}
+        id: build-package
+        uses: ./.github/SagaActions/ros/compile
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          package: ${{ matrix.package }}
+          build-order: ${{ steps.build-order.outputs.package-list }}
+          workspace: isolated_ws
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+          release-type: ${{ inputs.release-type }}
+      
+      - name: Upload artifact
+        if: ${{ inputs.release }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ steps.build-package.outputs.package_path }}
+          if-no-files-found: error
+          retention-days: 1
+
+  status:
+    if: ${{ always() }}
+    needs: [build, test]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Status
+
+    steps:
+      - name: Status for matrix build/test jobs
+        run: |
+          failed=$(curl -X GET -s -u "sagarobotics-cicd:${{ secrets.pat-token }}" \
+                    https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs | \
+                    jq -c 'any (.jobs[]; .conclusion == "failure")')
+          if [[ "$failed" == "true" ]]; then
+            echo "::error:: Build/test status failed!"
+            exit 1
+          else
+            exit 0
           fi
         shell: bash
 
-  # test:
-  #   name: Run tests
-  #   runs-on: ${{ fromJson(inputs.runs-on) }}
-  #   needs: prepare-jobs
-  #   strategy:
-  #     fail-fast: false
-  #     matrix: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
-  #   steps:
-  #     - name: Download workspace artifact
-  #     - name: Create isolated workspace
-  #     - name: Run tests
+  ros-version-check:
+    if: ${{ inputs.release }}
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Check ROS versions
+
+    steps:
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/${{ github.event.repository.name }}
+          token: ${{ secrets.pat-token }}
+          path: repository
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Check versions
+        uses: ./.github/SagaActions/ros/version_check
+        with:
+          workspace: repository
+          release-type: ${{ inputs.release-type }}
+
+  release:
+    if: ${{ inputs.release }}
+    needs: [status, ros-version-check, prepare-jobs]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Release Packages
+
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.prepare-jobs.outputs.matrix) }}
+
+    steps:
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+      
+      - name: Download artifact
+        id: download-artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
+          path: ${{ github.workspace }}
+      
+      - name: Find debian filename
+        id: find-deb-filename
+        run: |
+          echo "::group::\033[32mArtifacts\033[0m"
+          ls ${{ steps.download-artifact.outputs.download-path }}
+          echo "::endgroup::"
+          DEBFILE=$(ls ${{ steps.download-artifact.outputs.download-path }} | grep -e "\.deb$")
+          echo "debfile=$DEBFILE" >> $GITHUB_OUTPUT
+          OS_VERSION=$(echo $DEBFILE | sed -rn "s/.*_[0-9]+\.[0-9]+\.[0-9]+-[0-9]+([a-z]+)\..*/\1/p")
+          echo "os-version=$OS_VERSION" >> $GITHUB_OUTPUT
+        shell: bash
+      
+      - name: Release
+        uses: ./.github/SagaActions/ros/release
+        with:
+          debian-file: ${{ steps.find-deb-filename.outputs.debfile }}
+          package-location: ${{ steps.download-artifact.outputs.download-path }}
+          distribution: ${{ steps.find-deb-filename.outputs.os-version }}
+          release-type: ${{ inputs.release-type }}
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+    
+  update-rosdep:
+    if: ${{ inputs.release }}
+    needs: [prepare-jobs, release]
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Update ROS dependency file
+
+    steps:
+      - name: Checkout SagaActions
+        uses: actions/checkout@v3
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      - name: Update saga-rosdep
+        uses: ./.github/SagaActions/ros/rosdep
+        with:
+          ros-package-list: ${{ needs.prepare-jobs.outputs.matrix }}
+          ros-distribution: ${{ inputs.distribution }}
+          release-type: ${{ inputs.release-type }}
+          repo-init: ${{ github.event.repository.name }}
+          actor-init: ${{ github.actor }}
+          workflow-init: ${{ github.workflow }}
+          repo-token: ${{ secrets.pat-token }}
