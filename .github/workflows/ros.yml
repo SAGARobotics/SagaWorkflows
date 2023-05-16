@@ -76,12 +76,6 @@ on:
         description: Password for the provided user.
         required: true
 
-env:
-  CATKIN_WS_SRC: catkin_ws/src
-  # TODO: Problems with env var not being evaluated if used as input to action when using that 
-  # input as an input to a docker-action
-  BASE_WORKSPACE: base_ws
-
 jobs:
   prepare-jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
