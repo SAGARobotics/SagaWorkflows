@@ -327,7 +327,7 @@ jobs:
         shell: bash
       
       - name: Release
-        uses: ./github/SagaActions/ros/release
+        uses: ./.github/SagaActions/ros/release
         with:
           debian-file: ${{ steps.find-deb-filename.outputs.debfile }}
           package-location: ${{ steps.download-artifact.outputs.download-path }}
