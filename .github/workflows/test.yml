@@ -153,7 +153,7 @@ jobs:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
           path: .github/SagaActions
-          ref: optim
+          ref: baardkrohg/se-198-sagaactions-install-requirementstxt
 
       - name: Create package workspace
         id: catkin_workspace
