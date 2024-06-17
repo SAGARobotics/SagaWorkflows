@@ -132,7 +132,7 @@ jobs:
             PACKAGES='${{ steps.list-packages.outputs.package-list }}'
             echo "Using generated package list from workspace"
           else
-            PACKAGES=${{ inputs.packages }}
+            PACKAGES='${{ inputs.packages }}'
             echo "Using package list from input"
           fi
           echo "prepared-jobs=$PACKAGES" >> $GITHUB_OUTPUT
