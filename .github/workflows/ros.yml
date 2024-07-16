@@ -9,7 +9,7 @@ on:
           buildfarm. For public repositories, the public hosted runners (for example ubuntu-latest)
           must be used.
           Example value: '["ubuntu-latest"]'
-        default: '["self-hosted", "buildfarm"]'
+        default: '["self-hosted", "buildfarm", "ubuntu-20.04"]'
         required: false
 
       release-type:
@@ -93,7 +93,7 @@ jobs:
         shell: bash
 
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
@@ -102,7 +102,7 @@ jobs:
 
       - name: Temporary checkout ${{ github.event.repository.name }}
         if: ${{ inputs.packages == '[]' }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
@@ -151,7 +151,7 @@ jobs:
 
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
@@ -189,7 +189,7 @@ jobs:
     
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
@@ -260,7 +260,7 @@ jobs:
 
     steps:
       - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
@@ -268,7 +268,7 @@ jobs:
           ref: ${{ inputs.saga-action-ref }}
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/${{ github.event.repository.name }}
           token: ${{ secrets.pat-token }}
@@ -294,7 +294,7 @@ jobs:
 
     steps:
       - name: Checkout SagaActions
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
@@ -338,7 +338,7 @@ jobs:
 
     steps:
       - name: Checkout SagaActions
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: SAGARobotics/SagaActions
           token: ${{ secrets.pat-token }}
