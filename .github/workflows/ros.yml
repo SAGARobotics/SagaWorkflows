@@ -9,7 +9,7 @@ on:
           buildfarm. For public repositories, the public hosted runners (for example ubuntu-latest)
           must be used.
           Example value: '["ubuntu-latest"]'
-        default: '["self-hosted", "buildfarm"]'
+        default: '["self-hosted", "buildfarm", "ubuntu-20.04"]'
         required: false
 
       release-type:
@@ -75,9 +75,6 @@ on:
       repo-pass:
         description: Password for the provided user.
         required: true
-
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   prepare-jobs:
