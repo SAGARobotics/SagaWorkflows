@@ -226,7 +226,7 @@ jobs:
       
       - name: Upload artifact
         if: ${{ inputs.release }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
           path: ${{ steps.build-package.outputs.package_path }}
@@ -303,7 +303,7 @@ jobs:
       
       - name: Download artifact
         id: download-artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.package }}-${{ inputs.distribution }}-artifact
           path: ${{ github.workspace }}
