@@ -197,6 +197,10 @@ jobs:
           repo-pass: ${{ secrets.repo-pass }}
 
   build:
+    # Debian packaging (bloom-generate rosdebian + dpkg). Temporarily limited to
+    # release runs only; normal CI validates packages via the source build +
+    # colcon/pytest tests in the `test` job.
+    if: ${{ inputs.release }}
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Build
     needs: prepare-jobs
