@@ -9,7 +9,7 @@ on:
           buildfarm. For public repositories, the public hosted runners (for example ubuntu-latest)
           must be used.
           Example value: '["ubuntu-latest"]'
-        default: '["self-hosted", "buildfarm", "ubuntu-22.04"]'
+        default: '["self-hosted", "ubuntu-22.04"]'
         required: false
 
       release-type:
