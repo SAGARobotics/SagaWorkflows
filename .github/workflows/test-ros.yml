@@ -1,0 +1,56 @@
+name: Test reusable ROS workflow
+
+# Manually exercise the reusable `ros.yml` workflow against a chosen repository.
+# This is useful for validating changes to `ros.yml` or to the SagaActions
+# `ros/*` actions without having to open a pull request in a downstream
+# repository. Because `ros.yml` builds the repository given by the `repository`
+# input (falling back to the calling repository), this self-test can target any
+# ROS repository in the organization.
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Repository (without owner) to build.
+        type: string
+        required: true
+        default: ThorvaldCore2
+      distribution:
+        description: ROS distribution to build/test with.
+        type: string
+        required: false
+        default: humble
+      build-with-autonomy:
+        description: Merge the autonomy bundle into the build workspace.
+        type: boolean
+        required: false
+        default: true
+      autonomy-repo:
+        description: Autonomy bundle repository (without owner).
+        type: string
+        required: false
+        default: ThorvaldAutonomy2
+      saga-action-ref:
+        description: Git ref of SagaActions to use.
+        type: string
+        required: false
+        default: main
+      release:
+        description: Run the release stage (leave off for a build/test-only dry run).
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  test-ros:
+    uses: ./.github/workflows/ros.yml
+    with:
+      repository: ${{ inputs.repository }}
+      distribution: ${{ inputs.distribution }}
+      build-with-autonomy: ${{ inputs.build-with-autonomy }}
+      autonomy-repo: ${{ inputs.autonomy-repo }}
+      saga-action-ref: ${{ inputs.saga-action-ref }}
+      release: ${{ inputs.release }}
+    secrets:
+      pat-token: ${{ secrets.SERVICE_ACCOUNT_PAT_REPO_READ }}
+      repo-user: ${{ secrets.SAGA_REPO_WRITE_USER }}
+      repo-pass: ${{ secrets.SAGA_REPO_WRITE_PASS }}
