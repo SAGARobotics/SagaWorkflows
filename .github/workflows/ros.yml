@@ -158,10 +158,46 @@ jobs:
           echo "\033[94mResulting package list: $PACKAGES\033[0m"
         shell: bash
 
+  build-all:
+    runs-on: ${{ fromJson(inputs.runs-on) }}
+    name: Build shared workspace
+    needs: prepare-jobs
+
+    steps:
+      - name: Checkout SagaActions (${{ inputs.saga-action-ref }})
+        uses: actions/checkout@v4
+        with:
+          repository: SAGARobotics/SagaActions
+          token: ${{ secrets.pat-token }}
+          path: .github/SagaActions
+          ref: ${{ inputs.saga-action-ref }}
+
+      # Build every package in the workspace a single time. The resulting
+      # build/ and install/ trees are cached so the per-package test jobs can
+      # reuse them instead of recompiling each package's dependency subtree.
+      - name: Build the entire workspace once
+        uses: ./.github/SagaActions/ros/build_workspace
+        with:
+          rosdistro: ${{ inputs.distribution }}
+          artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
+          base-workspace: base_ws
+          destination-workspace: built_ws
+          repo-user: ${{ secrets.repo-user }}
+          repo-pass: ${{ secrets.repo-pass }}
+          release-type: ${{ inputs.release-type }}
+
+      - name: Cache the prebuilt workspace for the test jobs
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            built_ws/build
+            built_ws/install
+          key: built-ws-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.distribution }}
+
   test:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Test
-    needs: prepare-jobs
+    needs: [prepare-jobs, build-all]
 
     strategy:
       fail-fast: false
@@ -177,14 +213,29 @@ jobs:
           path: .github/SagaActions
           ref: ${{ inputs.saga-action-ref }}
 
+      # Bring the package's source (and its local dependencies' source) into the
+      # workspace. This is cheap (source only) and is required for colcon to
+      # discover and run the package's tests.
       - name: Create isolated workspace
         id: create-isolated-workspace
         uses: ./.github/SagaActions/ros/create_isolated_workspace
         with:
           package-name: ${{ matrix.package }}
-          destination-workspace: isolated_ws
+          destination-workspace: built_ws
           artifact-tag: ${{ needs.prepare-jobs.outputs.artifact }}
           base-workspace: base_ws
+
+      # Restore the build/ and install/ trees produced once by build-all. On a
+      # cache hit the package is already compiled and the test job only runs the
+      # tests; on a miss the test action rebuilds the package as a fallback.
+      - name: Restore prebuilt workspace
+        id: restore-build
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            built_ws/build
+            built_ws/install
+          key: built-ws-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.distribution }}
 
       - name: Run tests
         id: run-tests
@@ -192,9 +243,10 @@ jobs:
         with:
           rosdistro: ${{ inputs.distribution }}
           package: ${{ matrix.package }}
-          workspace: isolated_ws
+          workspace: built_ws
           repo-user: ${{ secrets.repo-user }}
           repo-pass: ${{ secrets.repo-pass }}
+          build: ${{ steps.restore-build.outputs.cache-hit != 'true' }}
 
   build:
     # Debian packaging (bloom-generate rosdebian + dpkg). Temporarily limited to
@@ -258,7 +310,7 @@ jobs:
 
   status:
     if: ${{ always() }}
-    needs: [build, test]
+    needs: [build-all, build, test]
     runs-on: ${{ fromJson(inputs.runs-on) }}
     name: Status
 
